@@ -190,20 +190,20 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // Pass necessary data to frontend JS
-    window.GAME_CONFIG = {
-        roomCode: "{{ room_code }}",
-        isHost: {{ 'true' if is_host else 'false' }},
-        playerName: {{ player_name|default('Người chơi')|tojson }},
-        playerTeam: {{ player_team|tojson }},
-        avatars: ["👮", "👨‍⚖️", "🕵️", "👨‍💻", "👩‍💼", "🛡️", "📜", "⚖️"]
-    };
-    window.CURRENT_USER = {
-        username: {{ (current_user.username if current_user.is_authenticated else player_name|default('Khách'))|tojson }},
-        id: {{ current_user.id if current_user.is_authenticated else 0 }}
-    };
+<script type="application/json" id="game-config">
+{
+    "roomCode": "{{ room_code }}",
+    "isHost": {{ 'true' if is_host else 'false' }},
+    "playerName": {{ player_name|default('Người chơi')|tojson }},
+    "playerTeam": {{ player_team|tojson }},
+    "avatars": ["👮", "👨‍⚖️", "🕵️", "👨‍💻", "👩‍💼", "🛡️", "📜", "⚖️"]
+}
 </script>
-<!-- Make sure to use the new JS file we will create -->
+<script type="application/json" id="current-user">
+{
+    "username": {{ (current_user.username if current_user.is_authenticated else player_name|default('Khách'))|tojson }},
+    "id": {{ current_user.id if current_user.is_authenticated else 0 }}
+}
+</script>
 <script src="{{ url_for('static', filename='scripts/game.js') }}"></script>
 {% endblock %}

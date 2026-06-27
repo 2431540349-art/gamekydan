@@ -211,8 +211,15 @@ def game_room(room_id):
     player_name = request.args.get("name") or session.get("guest_player_name") or (
         current_user.username if current_user.is_authenticated else "Người chơi"
     )
+    player_team = session.get("guest_player_team")
     is_host = (host_param in ('true', '1')) or rooms[room_id]['host_sid'] is None or len(rooms[room_id]['players']) == 0
-    return render_template("multiplayer-room-page.html", room_code=room_id, is_host=is_host, player_name=player_name)
+    return render_template(
+        "multiplayer-room-page.html",
+        room_code=room_id,
+        is_host=is_host,
+        player_name=player_name,
+        player_team=player_team
+    )
 
 
 @pages.route("/profile")

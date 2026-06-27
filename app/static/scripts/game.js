@@ -1,3 +1,8 @@
+const gameConfigScript = document.getElementById('game-config');
+const currentUserScript = document.getElementById('current-user');
+window.GAME_CONFIG = gameConfigScript ? JSON.parse(gameConfigScript.textContent || '{}') : {};
+window.CURRENT_USER = currentUserScript ? JSON.parse(currentUserScript.textContent || '{}') : { id: 0, username: '' };
+
 document.addEventListener('DOMContentLoaded', () => {
     // Programmatic Web Audio Synthesizer
     const SoundEffects = {

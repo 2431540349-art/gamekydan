@@ -82,8 +82,8 @@ def home():
 def lobby():
     """Create or Join room form selection"""
     room_code = request.args.get("room_code", "").strip()
-    if not room_code:
-        flash("Vui lòng nhập mã phòng từ trang chủ.", "error")
+    if room_code != FIXED_ROOM_CODE:
+        flash(f"Chỉ được phép vào phòng {FIXED_ROOM_CODE}.", "error")
         return redirect(url_for("main.home"))
     return render_template("lobby.html", students=STUDENTS, room_code=room_code)
 
@@ -122,8 +122,8 @@ def student_login():
     student_password = request.form.get("student_password", "").strip()
     student = STUDENTS_BY_MSSV.get(student_mssv)
 
-    if not (room_code.isdigit() and len(room_code) == 4):
-        flash("Mã phòng phải gồm đúng 4 chữ số.", "error")
+    if room_code != FIXED_ROOM_CODE:
+        flash(f"Chỉ được phép vào phòng {FIXED_ROOM_CODE}.", "error")
         return redirect(url_for("main.home"))
 
     if not student or student_password != student_mssv:

@@ -85,17 +85,21 @@ body::before {
 }
 
 .logo {
-    font-weight: 800;
-    font-size: 1.15rem;
+    font-weight: 900;
+    font-size: 1.4rem;
     color: var(--primary);
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.65rem;
 }
 
 .logo-icon {
-    font-size: 1.45rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #14b8a6;
+    box-shadow: 0 0 20px rgba(20,184,166,0.55);
 }
 
 .nav-links {
@@ -2116,51 +2120,56 @@ body.cyber-auth .trust-meter strong {
 }
 
 .cyber-card {
-    border: 1px solid rgba(15,98,254,0.14);
+    border: 1px solid rgba(20,184,166,0.22);
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.92));
+        linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,250,255,0.92));
     box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.8),
-        0 24px 60px rgba(15, 98, 254, 0.14);
+        0 20px 50px rgba(15,98,254,0.12);
 }
 
 .cyber-card::before {
     background:
-        linear-gradient(90deg, rgba(20,184,166,0.12), transparent 24%),
-        linear-gradient(180deg, rgba(15,98,254,0.06), transparent 40%);
+        linear-gradient(90deg, rgba(20,184,166,0.14), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.4), transparent 45%);
 }
 
 .cyber-card-title h1 {
-    color: var(--primary);
+    color: #0f62fe;
+    margin: 0 0 0.75rem;
+    font-size: 2rem;
+    letter-spacing: 0.3em;
+    line-height: 1;
+    font-weight: 800;
+    text-transform: uppercase;
     text-shadow: none;
 }
 
 .cyber-card-title p,
 .signal-stats span,
 .guest-link {
-    color: var(--text-secondary);
+    color: #475569;
 }
 
 .auth-tabs a {
-    background: rgba(248,251,255,0.9);
-    border-color: rgba(15,98,254,0.16);
-    color: var(--text-secondary);
+    background: rgba(249,250,251,0.92);
+    border-color: rgba(20,184,166,0.24);
+    color: #475569;
 }
 
 .auth-tabs a.active {
     color: #0f766e;
-    border-color: var(--cyber-teal);
-    background: rgba(20,184,166,0.09);
+    border-color: #0f766e;
+    background: rgba(20,184,166,0.12);
 }
 
 body.cyber-auth .input-group label {
-    color: var(--text-secondary);
+    color: #64748b;
 }
 
 body.cyber-auth .input-field {
-    background: rgba(255,255,255,0.92);
-    border-color: rgba(15,98,254,0.16);
-    color: var(--text-primary);
+    background: rgba(242,247,255,0.94);
+    border-color: rgba(20,184,166,0.18);
+    color: #0f172a;
 }
 
 body.cyber-auth .input-field::placeholder {
@@ -2168,26 +2177,33 @@ body.cyber-auth .input-field::placeholder {
 }
 
 body.cyber-auth .btn-primary {
-    background: var(--gradient-primary);
-    color: white;
-    box-shadow: 0 14px 32px rgba(15,98,254,0.22);
+    background: linear-gradient(135deg, #0f62fe 0%, #14b8a6 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 36px rgba(15,98,254,0.24);
+    letter-spacing: 0.12em;
+}
+
+body.cyber-auth .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 42px rgba(15,98,254,0.28);
 }
 
 .guest-link {
-    background: rgba(255,255,255,0.7);
-    border-color: rgba(15,98,254,0.14);
+    background: rgba(255,255,255,0.9);
+    border-color: rgba(20,184,166,0.18);
+    color: #64748b;
 }
 
 .cyber-status-panel {
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.9));
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,250,255,0.95));
 }
 
 .radar {
-    border-color: rgba(20,184,166,0.26);
+    border-color: rgba(20,184,166,0.28);
     background:
-        radial-gradient(circle, transparent 0 22%, rgba(20,184,166,0.11) 22.5% 23%, transparent 23.5% 45%, rgba(15,98,254,0.1) 45.5% 46%, transparent 46.5%),
-        repeating-conic-gradient(from 0deg, rgba(20,184,166,0.11) 0deg 1deg, transparent 1deg 18deg);
+        radial-gradient(circle, transparent 0 22%, rgba(20,184,166,0.12) 22.5% 23%, transparent 23.5% 45%, rgba(15,98,254,0.08) 45.5% 46%, transparent 46.5%),
+        repeating-conic-gradient(from 0deg, rgba(20,184,166,0.08) 0deg 1deg, transparent 1deg 18deg);
 }
 
 .radar-sweep {
@@ -2643,7 +2659,8 @@ body::before {
 }
 
 .home-hero .btn-lg {
-    min-width: 180px;
+    min-width: 140px;
+    padding: 0.75rem 1rem;
 }
 
 .team-mountain {
@@ -3162,4 +3179,138 @@ body.compact-mobile .results-container {
 
 body.compact-mobile .navbar {
     padding: 0 0.8rem;
+}
+
+/* === AUTH BRIGHT CYBER OVERRIDES === */
+body.cyber-auth {
+    background: linear-gradient(180deg, #f7fbff 0%, #ecf8ff 45%, #f3fbff 100%);
+    color: #0f172a;
+}
+
+body.cyber-auth .cyber-auth-screen {
+    padding: 2rem 1rem;
+}
+
+body.cyber-auth .cyber-auth-grid {
+    width: min(900px, 100%);
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+}
+
+@media (min-width: 820px) {
+    body.cyber-auth .cyber-auth-grid {
+        grid-template-columns: 420px minmax(320px, 1fr);
+    }
+}
+
+body.cyber-auth .cyber-card {
+    border: 1px solid rgba(20,184,166,0.18);
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 24px 80px rgba(15,98,254,0.08);
+}
+
+body.cyber-auth .cyber-card::before {
+    background:
+        linear-gradient(90deg, rgba(20,184,166,0.12), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.5), transparent 42%);
+    opacity: 0.45;
+}
+
+body.cyber-auth .cyber-card.auth-card {
+    padding: 2rem 1.8rem 1.4rem;
+}
+
+body.cyber-auth .cyber-card-title h1 {
+    color: #0f62fe;
+    font-size: clamp(2rem, 4.5vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+body.cyber-auth .cyber-card-title p {
+    color: #475569;
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+
+body.cyber-auth .auth-tabs {
+    margin-bottom: 1.5rem;
+}
+
+body.cyber-auth .auth-tabs a {
+    min-height: 44px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid rgba(20,184,166,0.16);
+    background: rgba(255,255,255,0.96);
+    color: #475569;
+}
+
+body.cyber-auth .auth-tabs a.active {
+    color: #0f62fe;
+    background: rgba(20,184,166,0.12);
+    border-color: rgba(20,184,166,0.32);
+}
+
+body.cyber-auth .input-group label {
+    color: #64748b;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+}
+
+body.cyber-auth .input-field {
+    height: 44px;
+    border: 1px solid rgba(20,184,166,0.18);
+    background: rgba(243,247,255,0.92);
+    color: #0f172a;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+body.cyber-auth .input-field::placeholder {
+    color: #94a3b8;
+}
+
+body.cyber-auth .input-field:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20,184,166,0.16);
+}
+
+body.cyber-auth .btn-primary {
+    min-height: 50px;
+    background: linear-gradient(135deg, #0f62fe 0%, #14b8a6 100%);
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    box-shadow: 0 16px 38px rgba(15,98,254,0.2);
+}
+
+body.cyber-auth .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 42px rgba(15,98,254,0.26);
+}
+
+body.cyber-auth .guest-link {
+    background: rgba(255,255,255,0.96);
+    border-color: rgba(20,184,166,0.18);
+    color: #64748b;
+}
+
+body.cyber-auth .cyber-status-panel {
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(20,184,166,0.18);
+}
+
+body.cyber-auth .panel-kicker {
+    color: #0f62fe;
+}
+
+body.cyber-auth .radar {
+    border-color: rgba(20,184,166,0.22);
+}
+
+body.cyber-auth .radar-sweep {
+    background: conic-gradient(from 220deg, rgba(15,98,254,0.28), transparent 52deg);
 }

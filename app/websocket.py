@@ -103,7 +103,7 @@ def get_teams_with_players(room):
 
 def get_active_player_sids(room):
     if not room.get('tournament_mode'):
-return list(room['players'].keys())
+        return list(room['players'].keys())
     active_teams = room.get('active_teams') or set()
     return [
         sid for sid, p in room['players'].items()
@@ -276,7 +276,7 @@ def on_create_room(data):
             user_db_id = current_user.id
             name = current_user.username
             current_user.avatar = avatar
-current_user.difficulty = difficulty
+            current_user.difficulty = difficulty
             db_session.merge(current_user)
             db_session.commit()
             
@@ -369,7 +369,7 @@ def on_join_room(data):
 
             room['players'][request.sid] = {
                 'user_id': user_db_id,
-'name': name,
+                'name': name,
                 'avatar': avatar,
                 'team': assigned_team,
                 'score': 0,
@@ -539,7 +539,7 @@ def on_start_game():
         else:
             diff = room['difficulty']
             q_count = DIFFICULTY_CONFIG[diff]['question_count']
-all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
+            all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
             if len(all_qs) < q_count:
                 all_qs += db_session.query(Question).filter(Question.difficulty != diff).all()
 
@@ -699,7 +699,7 @@ def send_next_question(room_code):
                 
         socketio.start_background_task(run_timer, room_code, room['current_index'])
     except Exception as e:
-socketio.emit('error', {'message': f"Lỗi chuyển câu hỏi: {str(e)}"}, to=room_code)
+        socketio.emit('error', {'message': f"Lỗi chuyển câu hỏi: {str(e)}"}, to=room_code)
 
 def handle_question_timeout(room_code):
     try:
@@ -933,7 +933,7 @@ def end_tournament(room_code, final_rankings):
                     user.total_tries += (p['wrong_answers'] + len(p['articles_correct']))
                     user.right_tries += len(p['articles_correct'])
                     if p['best_streak'] > user.best_streak:
-user.best_streak = p['best_streak']
+                        user.best_streak = p['best_streak']
 
                     db_session.merge(user)
                     db_session.commit()
@@ -1003,7 +1003,7 @@ def end_game(room_code):
                         'total_time': p['total_time'],
                         'wrong_answers': p['wrong_answers']
                     }
-new_badges = check_and_award_badges(p['user_id'], game_result)
+                    new_badges = check_and_award_badges(p['user_id'], game_result)
                     if new_badges:
                         badges_unlocked_all[sid] = new_badges
                         
@@ -1167,7 +1167,7 @@ def on_skip_break():
                 return
             if not room.get('in_break'):
                 return
-next_round = room['current_round'] + 1
+            next_round = room['current_round'] + 1
             room['in_break'] = False
             room['break_remaining'] = 0
         if next_round <= 4:

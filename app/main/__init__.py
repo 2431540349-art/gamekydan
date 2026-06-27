@@ -117,18 +117,33 @@ def _create_game_room(player_name, room_code=FIXED_ROOM_CODE):
 
 @pages.route("/game/student-login", methods=["POST"])
 def student_login():
+    room_code = request.form.get("room_code", "").strip()
     student_mssv = request.form.get("student_mssv", "").strip()
     student_password = request.form.get("student_password", "").strip()
     student = STUDENTS_BY_MSSV.get(student_mssv)
 
+    if not (room_code.isdigit() and len(room_code) == 4):
+        flash("Mã phòng phải gồm đúng 4 chữ số.", "error")
+        return redirect(url_for("main.home"))
+
     if not student or student_password != student_mssv:
         flash("MSSV hoặc mật khẩu không đúng. Vui lòng thử lại.", "error")
-        return redirect(url_for("main.lobby"))
+        return redirect(url_for("main.lobby", room_code=room_code))
 
     session["guest_player_name"] = student["name"]
     session["guest_player_group"] = student["group"]
+    session["guest_player_team"] = int(student["group"]) if student["group"].isdigit() else None
     flash(f"Chào {student['name']}, bạn thuộc nhóm {student['group']}.", "success")
-    return _create_game_room(student["name"])
+
+    from app.websocket import rooms
+    if room_code in rooms and rooms[room_code].get("started"):
+        flash("Phòng chơi này đã bắt đầu, vui lòng thử phòng khác.", "error")
+        return redirect(url_for("main.home"))
+
+    if room_code in rooms:
+        return redirect(url_for("main.game_room", room_id=room_code, host="false", name=student["name"]))
+
+    return _create_game_room(student["name"], room_code)
 
 
 @pages.route("/game/create", methods=["POST"])

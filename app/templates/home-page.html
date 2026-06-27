@@ -1,69 +1,60 @@
 {% extends "layout.html" %}
 
-{% block title %}DataGuard VN - Học Luật Bảo Vệ Dữ Liệu{% endblock %}
+{% block title %}LAW - Đấu trường kiến thức pháp lý{% endblock %}
 
 {% block content %}
-<div class="hero-section">
+<section class="home-hero">
     <div class="hero-badge">Nghị định 13/2023/NĐ-CP</div>
     <span class="hero-shield">🛡️</span>
-    <h1 class="hero-title">Kiến thức chuẩn, Bảo vệ thực</h1>
-    <p class="hero-subtitle">
-        Trở thành chuyên gia về Luật Bảo Vệ Dữ Liệu Cá Nhân tại Việt Nam qua những trận đấu trắc nghiệm thời gian thực gay cấn.
-    </p>
+    <h1 class="hero-title">LAW</h1>
+    <p class="hero-subtitle">Đấu trường hỏi đáp nhanh về bảo vệ dữ liệu cá nhân.</p>
 
     <div class="hero-actions">
-        {% if current_user.is_authenticated %}
-            <!-- Create Room Form -->
-            <form action="{{ url_for('main.create_room') }}" method="POST" class="flex gap-1" style="flex: 1; max-width: 300px;">
-                <button type="submit" class="btn btn-primary btn-block btn-lg">Tạo phòng mới</button>
-            </form>
-            
-            <!-- Join Room Form -->
-            <form action="{{ url_for('main.join_room_route') }}" method="POST" class="flex gap-1" style="flex: 1; max-width: 350px;">
-                <input type="text" name="room_code" class="input-field" placeholder="Nhập mã phòng (6 ký tự)" required maxlength="6" style="text-transform: uppercase; width: 100%;">
-                <button type="submit" class="btn btn-accent btn-lg" style="white-space: nowrap;">Vào phòng</button>
-            </form>
-        {% else %}
-            <a href="/lobby" class="btn btn-primary btn-lg">Chơi ngay</a>
-            <a href="/login" class="btn btn-outline btn-lg">Đăng nhập tùy chọn</a>
-        {% endif %}
+        <a href="/lobby" class="btn btn-primary btn-lg">Chơi ngay</a>
     </div>
 
-    <div class="stats-row">
-        <div class="stat-item">
-            <div class="stat-value">31+</div>
-            <div class="stat-label">Câu hỏi thực tế</div>
+    <div class="team-mountain" aria-label="Đội hình người chơi">
+        <div class="mountain-row mountain-row-top">
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Phúc</strong>
+            </div>
         </div>
-        <div class="stat-item">
-            <div class="stat-value">6+</div>
-            <div class="stat-label">Huy hiệu</div>
+        <div class="mountain-row mountain-row-mid">
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Hân</strong>
+            </div>
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Đàn</strong>
+            </div>
         </div>
-        <div class="stat-item">
-            <div class="stat-value">NĐ-13</div>
-            <div class="stat-label">Chuẩn Pháp lý</div>
+        <div class="mountain-row mountain-row-base">
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Tuyết</strong>
+            </div>
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Linh</strong>
+            </div>
+            <div class="mountain-player">
+                <span>👤</span>
+                <strong>Quỳnh</strong>
+            </div>
         </div>
     </div>
-</div>
+</section>
 
-{% if current_user.is_authenticated %}
-<div style="max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem;">
-    <div class="card" style="padding: 2rem;">
-        <h2 class="mb-2 text-center">Hướng dẫn chơi</h2>
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
-            <div>
-                <h3 style="color: var(--primary); margin-bottom: 0.5rem;">1. Tạo hoặc tham gia</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Host có quyền chọn độ khó của bộ câu hỏi (Cơ bản, Tiêu chuẩn, Chuyên sâu).</p>
-            </div>
-            <div>
-                <h3 style="color: var(--primary); margin-bottom: 0.5rem;">2. Trả lời nhanh</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Mỗi câu có thời gian giới hạn. Trả lời càng nhanh và đúng liên tiếp (chuỗi) để nhận điểm thưởng.</p>
-            </div>
-            <div>
-                <h3 style="color: var(--primary); margin-bottom: 0.5rem;">3. Dùng quyền trợ giúp</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Tận dụng 50:50 hoặc Gợi ý đúng lúc để vượt qua những câu hỏi khó nhằn về mức phạt.</p>
-            </div>
-        </div>
+<footer class="security-footer">
+    <div>
+        <strong>PCI DSS</strong>
+        <span>Đạt chứng nhận bảo mật toàn cầu PCI DSS cấp độ cao nhất.</span>
     </div>
-</div>
-{% endif %}
+    <div>
+        <strong>GlobalSign SSL/TLS</strong>
+        <span>SSL/TLS đạt chứng nhận quốc tế GlobalSign.</span>
+    </div>
+</footer>
 {% endblock %}

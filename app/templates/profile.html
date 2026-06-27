@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block title %}Hồ sơ - DataGuard VN{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">👤</div>
+        <h1 class="profile-title" style="margin-bottom: 0.5rem;">Hồ sơ của {{ current_user.username }}</h1>
+        <div class="profile-stat-row">
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.games_played }}</div>
+                <div class="stat-label">Trận đã chơi</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.total_score }}</div>
+                <div class="stat-label">Tổng điểm</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.average_accuracy }}%</div>
+                <div class="stat-label">Tỉ lệ đúng</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--danger);">{{ stats.max_streak }}</div>
+                <div class="stat-label">Chuỗi Max</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges Section -->
+    <div class="card mb-3" style="padding: 1.5rem;">
+        <h2 style="font-size: 1.25rem;">Huy hiệu của bạn</h2>
+        <div class="badge-grid">
+            {% for badge in badges %}
+            <div class="badge-item {% if badge.earned %}earned{% else %}unearned{% endif %}" title="{{ badge.description }}">
+                <div class="badge-icon">{{ badge.icon }}</div>
+                <div class="badge-name">{{ badge.name }}</div>
+                <div class="badge-desc">{{ badge.description }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Heatmap Analytics -->
+    <div class="card heatmap-container mb-3" style="padding: 1.5rem;">
+        <h3 style="font-size: 1.25rem; text-align: left; margin-bottom: 1rem;">Năng lực theo Điều Luật (NĐ 13)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Dựa trên phân tích các câu trả lời gần đây của bạn.</p>
+        
+        <div class="articles-grid">
+            {% for article in heatmap %}
+            <div class="article-card {% if article.accuracy >= 70 %}strong{% elif article.accuracy >= 40 %}ok{% else %}weak{% endif %}">
+                <div class="article-icon">
+                    {% if article.accuracy >= 70 %}✅
+                    {% elif article.accuracy >= 40 %}⚠️
+                    {% else %}❌{% endif %}
+                </div>
+                <div class="article-name">Điều {{ article.article }}</div>
+                <div class="accuracy-bar">
+                    <div class="bar-fill" style="width: {{ article.accuracy }}%;"></div>
+                </div>
+                <div class="accuracy-text">{{ article.accuracy }}% chính xác ({{ article.correct }}/{{ article.total }})</div>
+                <div class="suggestion">
+                    {% if article.accuracy >= 70 %}Tuyệt vời!
+                    {% elif article.accuracy >= 40 %}Cần ôn tập thêm.
+                    {% else %}Nên học lại kỹ điều này.{% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center" style="grid-column: 1 / -1; padding: 2rem; color: var(--text-muted);">
+                Chưa có đủ dữ liệu. Hãy tham gia thêm các trận đấu để phân tích.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="/" class="btn btn-primary">Trở về trang chủ</a>
+    </div>
+</div>
+{% endblock %}

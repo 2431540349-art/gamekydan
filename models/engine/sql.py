@@ -66,6 +66,8 @@ def reload():
     from models.question import Question
     from models.score import Score
     from models.user import User
+    from models.player_answer import PlayerAnswer
+    from models.badge_definition import BadgeDefinition
 
     if getenv("ENV_TYPE") == "test":
         Base.metadata.drop_all(engine)

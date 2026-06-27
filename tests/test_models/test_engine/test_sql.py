@@ -16,10 +16,11 @@ def test_sqlite(name):
         assert DB_URI == f"sqlite:///{name}"
 
 
-@mock.patch("models.sql.reload")
-def test_mysql(reload):
+@mock.patch("sqlalchemy.create_engine")
+@mock.patch("models.engine.sql.reload")
+def test_mysql(mock_reload, mock_create_engine):
     """Correct DB_URI is set for mysql enviroment"""
-    reload.return_value = 0
+    mock_reload.return_value = 0
     env_d = {
         "DB_ENGINE": "mysql",
         "DB_NAME": "mydb",
@@ -29,7 +30,8 @@ def test_mysql(reload):
     }
     with mock.patch.dict(os.environ, env_d):
         sys.modules.pop("models.engine.sql", "")
-        DB_URI = __import__("models.engine.sql").engine.sql.DB_URI
+        sql_module = __import__("models.engine.sql").engine.sql
+        DB_URI = sql_module.DB_URI
 
         assert DB_URI == "mysql+mysqldb://me:mypass@myhost/mydb"
 

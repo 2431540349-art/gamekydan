@@ -1,96 +1,70 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Question League{% endblock %}</title>
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-  <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css">
-  {% block headers %}{% endblock %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}DataGuard VN - Quiz Game{% endblock %}</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    {% block head %}{% endblock %}
 </head>
-
-<body class="overflow-x-hidden max-w-[100vw]">
-  <header class="select-none text-gray-800 font-semibold mb-3 mt-1 py-1">
-    <nav
-      class="lg:container px-4 mx-auto flex-col  md:flex-row space-y-4 md:space-y-0 flex items-center justify-between">
-      <div class="flex items-center h-full">
-        <a href="/" class="inline-block font-bold tracking-tight text-3xl first-letter:text-cinnabar">
-          Qleague</a>
-
-        {% if current_user.is_authenticated %}
-        <div
-          class="flex items-center space-x-1 ml-4 text-lg text-gray-600 bg-blue-100 rounded-full border-green pl-2 pr-3 py-1">
-          <svg fill="none" stroke="currentColor" stroke-width="2" class="stroke-green-500 w-6 h-6" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-          <span>
-            {{ current_user.username }}
-          </span>
+<body>
+    <header class="navbar">
+        <div class="navbar-inner">
+            <a href="/" class="logo">
+                <span class="logo-icon">🛡️</span> DataGuard VN
+            </a>
+            
+            <nav class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <a href="/profile" class="nav-user">
+                        👤 {{ current_user.username }}
+                    </a>
+                    <a href="/logout" class="btn-ghost btn-sm">Thoát</a>
+                {% else %}
+                    <a href="/login" class="btn-ghost btn-sm">Đăng nhập</a>
+                    <a href="/register" class="btn-primary btn-sm">Đăng ký</a>
+                {% endif %}
+            </nav>
         </div>
-        {% endif %}
-      </div>
-      <div class="flex space-x-3 transition-all [&>a]:duration-100">
-        <a href="/play" class="hover:-translate-y-1 active:translate-y-1">
-          <svg class="w-full h-6" fill="none" viewBox="0 0 24 24">
-            <path fill="#000" fill-rule="evenodd"
-              d="M19 .00001484 23 0c.2652-9.5e-7.5195.105355.7071.292891.1875.187535.2929.441889.2929.707106V5.00001c0 .26522-.1054.51957-.2929.70711L11.9142 17.5l1.7929 1.7929c.3905.3905.3905 1.0237 0 1.4142-.3905.3906-1.0237.3906-1.4142 0l-2.50001-2.5-.32913-.3291-3.46386 3.1175c.00106.768-.29117 1.5385-.87858 2.1259-1.17157 1.1716-3.07107 1.1716-4.24264 0-1.171573-1.1716-1.171573-3.0711 0-4.2427.58739-.5874 1.35779-.8796 2.12583-.8785l3.11751-3.4639-.32915-.3292-2.49998-2.5c-.39052-.3905-.39052-1.0237 0-1.4142.39053-.39051 1.02369-.39051 1.41422 0l1.79287 1.7929L18.2929.292907c.1875-.187535.4419-.2928912.7071-.29289216ZM7.91419 13.5l.29291.2929 2 2 .2929.2929 11.5-11.5V2l-2.5858.00001L7.91419 13.5Zm-.376 2.4524-2.53384 2.8154c.03975.0357.07876.0727.11697.1109.0382.0382.07516.0772.11089.117l2.81538-2.5339-.5094-.5094Zm-4.33143 4.069c-.32231-.0674-.66667.0244-.91387.2716-.39052.3905-.39052 1.0236 0 1.4142.39053.3905 1.02369.3905 1.41422 0 .2472-.2472.33899-.5916.27151-.9139-.0383-.183-.12787-.3567-.27151-.5003-.14365-.1437-.31741-.2333-.50035-.2716Z"
-              clip-rule="evenodd" />
-          </svg>
-          Play
-        </a>
-        <a href="{{ url_for('main.multiplayer') }}" class="hover:-translate-y-1 active:translate-y-1">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-            class="w-full h-6">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="m20.893 13.393-1.135-1.135a2.252 2.252 0 0 1-.421-.585l-1.08-2.16a.414.414 0 0 0-.663-.107.827.827 0 0 1-.812.21l-1.273-.363a.89.89 0 0 0-.738 1.595l.587.39c.59.395.674 1.23.172 1.732l-.2.2c-.212.212-.33.498-.33.796v.41c0 .409-.11.809-.32 1.158l-1.315 2.191a2.11 2.11 0 0 1-1.81 1.025 1.055 1.055 0 0 1-1.055-1.055v-1.172c0-.92-.56-1.747-1.414-2.089l-.655-.261a2.25 2.25 0 0 1-1.383-2.46l.007-.042a2.25 2.25 0 0 1 .29-.787l.09-.15a2.25 2.25 0 0 1 2.37-1.048l1.178.236a1.125 1.125 0 0 0 1.302-.795l.208-.73a1.125 1.125 0 0 0-.578-1.315l-.665-.332-.091.091a2.25 2.25 0 0 1-1.591.659h-.18c-.249 0-.487.1-.662.274a.931.931 0 0 1-1.458-1.137l1.411-2.353a2.25 2.25 0 0 0 .286-.76m11.928 9.869A9 9 0 0 0 8.965 3.525m11.928 9.868A9 9 0 1 1 8.965 3.525" />
-          </svg>
-          Multiplayer
-        </a>
-        {% if current_user.is_authenticated %}
-        <a href="/logout" class="hover:-translate-y-1 active:translate-y-1">
-          <svg fill="none" stroke="CurrentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            class="w-full h-6" viewBox="0 0 24 24">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9" />
-          </svg>
-          Logout
-        </a>
-        {% else %}
-        <a href="/login" class="hover:-translate-y-1 active:translate-y-1">
-          <svg fill="none" stroke="CurrentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            class="pl-1 h-6" viewBox="0 0 24 24">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4m-5-4 5-5-5-5m5 5H3" />
-          </svg>
-          Login
-        </a>
-        <a href="/register" class="hover:-translate-y-1 active:translate-y-1">
-          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-full h-6">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-          </svg>
-          Register
-        </a>
-        {% endif %}
-      </div>
-    </nav>
-  </header>
-  <div class="fixed inset-0 -z-10 h-full w-full bg-white">
-    <div
-      class="w-full h-full -z-10 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem]">
-    </div>
-    <div
-      class="absolute -z-50 bottom-0 left-0 right-0 top-0 bg-[radial-gradient(circle_800px_at_100%_200px,#a9d6e5,transparent)]">
-    </div>
-  </div>
-  {% block content %}{% endblock %}
-  <!-- Code for live server, don't forget to remove it in production -->
-  <script>
-    const src = new EventSource("/ping");
-    src.onmessage = () => setTimeout(() => window.location.reload(), 200);
-  </script>
-  <!-- delete untill this line -->
-</body>
+    </header>
 
+    <main id="app-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages" style="position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;">
+                    {% for category, message in messages %}
+                        <div class="card card-glass" style="padding: 1rem; border-left: 4px solid {% if category == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+                <script>
+                    setTimeout(() => {
+                        document.querySelector('.flash-messages').style.display = 'none';
+                    }, 5000);
+                </script>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Hot reload ping (legacy support) -->
+    <div id="ping" style="display:none;"></div>
+    
+    <script>
+        // Set user info globally for JS
+        window.CURRENT_USER = {
+            id: {% if current_user.is_authenticated %}{{ current_user.id }}{% else %}null{% endif %},
+            username: "{% if current_user.is_authenticated %}{{ current_user.username }}{% else %}{% endif %}"
+        };
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
 </html>

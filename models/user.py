@@ -23,6 +23,11 @@ class User(BaseModel, Base, UserMixin):
     total_score: Mapped[int] = mapped_column(default=0)
     total_tries: Mapped[int] = mapped_column(default=0)
     right_tries: Mapped[int] = mapped_column(default=0)
+    avatar: Mapped[str] = mapped_column(String(50), default="avatar_1")
+    badges: Mapped[str] = mapped_column(String(512), default="[]")
+    total_games: Mapped[int] = mapped_column(default=0)
+    best_streak: Mapped[int] = mapped_column(default=0)
+    difficulty: Mapped[str] = mapped_column(String(20), default="medium")
     scores: Mapped[List[Score]] = relationship()
 
     @validates("username")

@@ -11,7 +11,7 @@ from app.api.v1 import api_v1
 from app.main import pages
 from app.main.auth import login_manager
 from app.pubsub import publish, subscribe
-from app.websocket import sock
+from app.websocket import socketio
 from models import close_connection
 
 app = Flask(__name__)
@@ -21,7 +21,7 @@ app.register_blueprint(api_v1)
 app.register_blueprint(pages)
 
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-sock.init_app(app)
+socketio.init_app(app)
 login_manager.init_app(app)
 
 

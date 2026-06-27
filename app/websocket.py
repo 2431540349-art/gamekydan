@@ -1,188 +1,707 @@
 import json
 import secrets
-from threading import Timer
-from time import sleep
-
-from flask import abort
+import time
+import random
+from threading import Timer, Lock
+from flask import request
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_login import current_user
 
 from models.question import Question
+from models.user import User
+from models.badge_definition import BadgeDefinition
+from models.player_answer import PlayerAnswer
+from models.engine.sql import session as db_session
 
+# SocketIO object initialized without app, will be initialized via init_app in app/__init__.py
+socketio = SocketIO(cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
 
-from flask_sock import ConnectionClosed, Server, Sock
+room_lock = Lock()
+rooms = {}
 
-sock = Sock()
+DIFFICULTY_CONFIG = {
+    'easy': {
+        'time_per_question': 20,
+        'score_multiplier': 1.0,
+        'lifelines': ['fifty_fifty', 'hint'],
+        'question_count': 10
+    },
+    'medium': {
+        'time_per_question': 20,
+        'score_multiplier': 1.5,
+        'lifelines': ['fifty_fifty'],
+        'question_count': 12
+    },
+    'hard': {
+        'time_per_question': 20,
+        'score_multiplier': 2.0,
+        'lifelines': [],
+        'question_count': 15
+    }
+}
 
+def get_room_by_sid(sid):
+    with room_lock:
+        for code, room in rooms.items():
+            if sid in room['players']:
+                return code
+    return None
 
-@sock.route("/multiplayer/<room_id>")
-def ws_connect(ws: Server, room_id):
-    """socket connection handler, yes everything is here"""
-    room = Room.get(room_id)
-    if room is None:
-        return ws.close()
-    if current_user.is_authenticated:
-        user_id = current_user.username
-        user = current_user
-    else:
-        user_id = secrets.token_hex(3) + " (guest)"
-        user = None
-    if user_id in room.users:
-        return ws.close()
-    user = {"user_id": user_id, "socket": ws, "user": user}
-    info = room.info
-    info["user_id"] = user_id
-    ws.send(json.dumps({"event": "welcome", "payload": info}))
-    room.join(user)
-    if room is None:
-        return abort(404)
-    try:
-        while True:
-            message = ws.receive()
-            if message:
-                room.respond(message, user_id)
-    except ConnectionClosed:
-        room.exit(user_id)
-        ws.close()
+def get_room_players_list(room_code):
+    room = rooms.get(room_code)
+    if not room:
+        return []
+    res = []
+    for sid, p in room['players'].items():
+        badges_list = []
+        if p['user_id']:
+            badges_list = get_user_badges(p['user_id'])
+        res.append({
+            'sid': sid,
+            'user_id': p['user_id'],
+            'username': p['name'],
+            'avatar': p['avatar'],
+            'score': p['score'],
+            'streak': p['streak'],
+            'ready': p['is_ready'],
+            'is_host': (room['host_sid'] == sid),
+            'badges': badges_list
+        })
+    return res
 
-
-class Room:
-    """The multiplayer rooms wrapper"""
-
-    # this could be upgraded to Redis or something
-    __rooms = {}
-
-    def __init__(self):
-        """create a room"""
-        self.id = secrets.token_hex(3)
-        Room.__rooms[self.id] = self
-        self.users = {}
-        self.category_id = 0
-        self.question = None
-        self.timer = Timer(30, self.play)
-        self.rank = 0
-        self.events = {
-            "ready": self.user_ready,
-            "category_vote": self.category_vote,
-            "guest_name": self.guest_name,
-        }
-
-    @classmethod
-    def get(cls, room_id):
-        """check if there is a room with the id `room_id`"""
-        return cls.__rooms.get(room_id, None)
-
-    @property
-    def info(self):
-        """get the current state of the room"""
-        d = {
-            "users": [],
-            "categories": {},
-            "ready": 0,
-        }
-        for user in self.users.values():
-            c_id = user.get("category_id")
-            d["categories"][c_id] = d["categories"].get(c_id, 0) + 1
-            d["ready"] += user.get("ready", 0)
-            d["users"].append(user.copy())
-            d["users"][-1].pop("socket", 0)
-            d["users"][-1].pop("user", 0)
-        if self.question:
-            d["started"] = True
-            d["question"] = self.question.to_dict(pop=["right_answer"])
-        d["ready"] = d["ready"] > len(d["users"]) // 2
-        return d
-
-    def respond(self, message, user_id):
-        """handle incoming message events"""
+def get_user_badges(user_id):
+    user = db_session.query(User).filter_by(id=user_id).first()
+    if user and user.badges:
         try:
-            data = json.loads(message)
-        except json.decoder.JSONDecodeError:
-            socket = self.users.get(user_id, {}).get("socket")
-            if socket:
-                socket.send("Only JSON is supported")
+            return json.loads(user.badges)
+        except:
+            return []
+    return []
+
+def award_badge(user_id, badge_key):
+    user = db_session.query(User).filter_by(id=user_id).first()
+    if user:
+        try:
+            badges = json.loads(user.badges) if user.badges else []
+        except:
+            badges = []
+        if badge_key not in badges:
+            badges.append(badge_key)
+            user.badges = json.dumps(badges)
+            db_session.merge(user)
+            db_session.commit()
+
+def get_total_games(user_id):
+    user = db_session.query(User).filter_by(id=user_id).first()
+    return user.total_games if user else 0
+
+def check_and_award_badges(user_id, game_result):
+    awarded = []
+    current_badges = get_user_badges(user_id)
+    
+    checks = [
+        ('thanh_than', game_result.get('max_streak', 0) >= 10),
+        ('biet_luat', len(game_result.get('articles_correct', [])) >= 10),
+        ('chien_binh', game_result.get('final_rank') == 1),
+        ('nhanh_tay', game_result.get('total_time', 999) <= 180),
+        ('kien_nhan', get_total_games(user_id) >= 5),
+        ('toan_ven', game_result.get('wrong_answers', 1) == 0),
+    ]
+    
+    for badge_key, condition in checks:
+        if condition and badge_key not in current_badges:
+            award_badge(user_id, badge_key)
+            awarded.append(badge_key)
+    
+    return awarded
+
+# --- SOCKET.IO EVENT HANDLERS ---
+
+@socketio.on('create_room')
+def on_create_room(data):
+    try:
+        difficulty = data.get('difficulty', 'medium')
+        avatar = data.get('avatar', 'avatar_1')
+        name = data.get('name', 'Trưởng phòng')
+        
+        room_code = secrets.token_hex(3).upper()
+        
+        user_db_id = None
+        if current_user.is_authenticated:
+            user_db_id = current_user.id
+            name = current_user.username
+            current_user.avatar = avatar
+            current_user.difficulty = difficulty
+            db_session.merge(current_user)
+            db_session.commit()
+            
+        with room_lock:
+            rooms[room_code] = {
+                'host_sid': request.sid,
+                'difficulty': difficulty,
+                'started': False,
+                'questions': [],
+                'current_index': 0,
+                'active_question': None,
+                'question_start_time': 0,
+                'player_answers_submitted': {},
+                'players': {
+                    request.sid: {
+                        'user_id': user_db_id,
+                        'name': name,
+                        'avatar': avatar,
+                        'score': 0,
+                        'streak': 0,
+                        'best_streak': 0,
+                        'articles_correct': set(),
+                        'wrong_answers': 0,
+                        'total_time': 0.0,
+                        'used_lifelines': {'fifty_fifty': False, 'hint': False},
+                        'used_lifeline_on_this': False,
+                        'is_ready': True
+                    }
+                },
+                'game_id': secrets.token_hex(8),
+                'timer_thread': None
+            }
+        
+        join_room(room_code)
+        
+        emit('room_created', {
+            'room_code': room_code,
+            'difficulty': difficulty,
+            'players': get_room_players_list(room_code)
+        })
+    except Exception as e:
+        emit('error', {'message': f"Lỗi tạo phòng: {str(e)}"})
+
+@socketio.on('join_room')
+def on_join_room(data):
+    try:
+        room_code = data.get('room_code', '').upper()
+        avatar = data.get('avatar', 'avatar_1')
+        name = data.get('name', 'Người chơi')
+        
+        with room_lock:
+            if room_code not in rooms:
+                emit('error', {'message': 'Phòng chơi không tồn tại!'})
+                return
+            room = rooms[room_code]
+            if room['started']:
+                emit('error', {'message': 'Ván đấu đã bắt đầu!'})
+                return
+                
+            user_db_id = None
+            if current_user.is_authenticated:
+                user_db_id = current_user.id
+                name = current_user.username
+                current_user.avatar = avatar
+                db_session.merge(current_user)
+                db_session.commit()
+            
+            if room['host_sid'] is None:
+                room['host_sid'] = request.sid
+            
+            is_player_host = (room['host_sid'] == request.sid)
+            
+            room['players'][request.sid] = {
+                'user_id': user_db_id,
+                'name': name,
+                'avatar': avatar,
+                'score': 0,
+                'streak': 0,
+                'best_streak': 0,
+                'articles_correct': set(),
+                'wrong_answers': 0,
+                'total_time': 0.0,
+                'used_lifelines': {'fifty_fifty': False, 'hint': False},
+                'used_lifeline_on_this': False,
+                'is_ready': is_player_host
+            }
+            
+        join_room(room_code)
+        
+        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+        
+        emit('room_created', {
+            'room_code': room_code,
+            'difficulty': room['difficulty'],
+            'players': get_room_players_list(room_code)
+        })
+    except Exception as e:
+        emit('error', {'message': f"Lỗi tham gia phòng: {str(e)}"})
+
+
+@socketio.on('toggle_ready')
+def on_toggle_ready(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
             return
+        ready = bool(data.get('ready', False))
+        with room_lock:
+            room = rooms[room_code]
+            if sid in room['players']:
+                is_host = (room['host_sid'] == sid)
+                room['players'][sid]['is_ready'] = True if is_host else ready
+        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi sẵn sàng: {str(e)}"})
 
-        event = self.events.get(data.get("event"))
-        if event:
-            payload = data.get("payload", {})
-            payload["user_id"] = user_id
-            event(payload)
 
-    def emit(self, event, payload=None):
-        """send the current state of the room to all the party"""
-        message = {"event": event, "payload": payload}
-        for user in self.users.values():
-            user["socket"].send(json.dumps(message))
+@socketio.on('update_avatar')
+def on_update_avatar(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        avatar = data.get('avatar')
+        if avatar:
+            with room_lock:
+                room = rooms[room_code]
+                if sid in room['players']:
+                    room['players'][sid]['avatar'] = avatar
+            socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi cập nhật avatar: {str(e)}"})
 
-    def join(self, payload: dict):
-        """Add user to a room"""
-        self.users[payload["user_id"]] = payload
-        self.emit("user_in", {"user_id": payload["user_id"]})
 
-    def exit(self, user_id):
-        """Remove a user from a room"""
-        if len(self.users) == 1:
-            self.timer.cancel()
-            del Room.__rooms[self.id]
-        self.users.pop(user_id, 0)
-        self.emit("user_out", user_id)
+@socketio.on('update_settings')
+def on_update_settings(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        difficulty = data.get('difficulty')
+        if difficulty in ['easy', 'medium', 'hard']:
+            with room_lock:
+                room = rooms[room_code]
+                if room['host_sid'] == sid:
+                    room['difficulty'] = difficulty
+            socketio.emit('settings_updated', {'difficulty': difficulty}, to=room_code)
+            socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi cập nhật thiết lập: {str(e)}"})
 
-    def play(self):
-        """Start asking questions to the users in the room"""
-        self.rank = 0
-        self.question = Question.random(self.category_id)
-        if self.question:
-            self.emit("question", self.question.to_dict(pop=["right_answer"]))
-            self.timer = Timer(30, self.play)
-            self.timer.start()
+@socketio.on('start_game')
+def on_start_game():
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        room = rooms[room_code]
+        if room['host_sid'] != sid:
+            emit('error', {'message': 'Chỉ có trưởng phòng mới có thể bắt đầu game!'})
+            return
+            
+        diff = room['difficulty']
+        q_count = DIFFICULTY_CONFIG[diff]['question_count']
+        
+        all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
+        if len(all_qs) < q_count:
+            all_qs += db_session.query(Question).filter(Question.difficulty != diff).all()
+            
+        random.shuffle(all_qs)
+        room['questions'] = all_qs[:q_count]
+        room['current_index'] = 0
+        room['started'] = True
+        room['game_id'] = secrets.token_hex(8)
+        
+        socketio.emit('game_started', {
+            'question_count': q_count,
+            'difficulty': diff,
+            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines']
+        }, to=room_code)
+        
+        socketio.sleep(1.5)
+        send_next_question(room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi khởi động game: {str(e)}"})
 
-    def user_answer(self, payload):
-        """Check user answers and give them score"""
-        user = self.users.get(payload.get("user_id"))
-        answer = payload.get("answer")
-        if user and answer and self.question:
-            self.rank += 1
-            scale = 1 + 0.1 * abs(len(self.users) - self.rank)
-            if user.get("user"):
-                score = user["user"].answer(self.question, answer, scale=scale)
-            else:
-                score = self.question.answer(answer, scale=scale)
-            user["score"] = user.get("score", 0) + score
-            self.emit("user_answer", {"user_id": user["user_id"], "score": score})
-        if self.rank == len(self.users):
-            self.timer.cancel()
-            sleep(3)
-            self.play()
+def send_next_question(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            
+        idx = room['current_index']
+        if idx >= len(room['questions']):
+            end_game(room_code)
+            return
+            
+        q = room['questions'][idx]
+        room['active_question'] = q
+        room['current_index'] += 1
+        room['player_answers_submitted'] = {}
+        room['question_start_time'] = time.time()
+        
+        for p in room['players'].values():
+            p['used_lifeline_on_this'] = False
+            
+        # Build payload matching frontend expectations
+        q_dict = {
+            'id': q.id,
+            'question': q.content,          # frontend uses data.question
+            'options': [q.option_a, q.option_b, q.option_c, q.option_d],  # frontend uses data.options
+            'article': q.article_name,       # frontend uses data.article
+            'article_name': q.article_name,
+            'difficulty': q.difficulty,
+            'current_q': room['current_index'],   # frontend uses data.current_q
+            'total_q': len(room['questions']),     # frontend uses data.total_q
+        }
+        
+        socketio.emit('new_question', q_dict, to=room_code)
+        
+        room['timer_active'] = True
+        
+        def run_timer(rc, q_idx):
+            try:
+                # We need to read difficulty and look up limit inside loop safely
+                with room_lock:
+                    if rc not in rooms:
+                        return
+                    limit = DIFFICULTY_CONFIG[rooms[rc]['difficulty']]['time_per_question']
+                
+                for t in range(limit, -1, -1):
+                    with room_lock:
+                        if rc not in rooms:
+                            break
+                        rm = rooms[rc]
+                        if not rm['started'] or rm['current_index'] != q_idx or not rm.get('timer_active'):
+                            break
+                    
+                    socketio.emit('timer_tick', t, to=rc)
+                    
+                    if t == 0:
+                        handle_question_timeout(rc)
+                        break
+                    socketio.sleep(1.0)
+            except Exception as ex:
+                print("Error in timer background task:", ex)
+                
+        socketio.start_background_task(run_timer, room_code, room['current_index'])
+    except Exception as e:
+        socketio.emit('error', {'message': f"Lỗi chuyển câu hỏi: {str(e)}"}, to=room_code)
 
-    def user_ready(self, payload: dict):
-        """handle start-game votes"""
-        user = self.users.get(payload.get("user_id"))
-        if user:
-            user["ready"] = not user.get("ready", False)
-            user = user.copy()
-            user.pop("socket", 0)
-            user.pop("user", 0)
-            self.emit("user_ready", user)
-            if self.info["ready"]:
-                self.emit("game_start")
-                del self.events["ready"]
-                self.events["answer"] = self.user_answer
-                self.play()
+def handle_question_timeout(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            if not room['active_question']:
+                return
+                
+        limit = DIFFICULTY_CONFIG[room['difficulty']]['time_per_question']
+        for sid, p in room['players'].items():
+            if sid not in room['player_answers_submitted']:
+                if p['user_id']:
+                    try:
+                        ans_log = PlayerAnswer(
+                            user_id=p['user_id'],
+                            game_id=room['game_id'],
+                            question_id=room['active_question'].id,
+                            article_id=room['active_question'].article_id,
+                            is_correct=False,
+                            time_taken=float(limit),
+                            difficulty=room['difficulty']
+                        )
+                        db_session.add(ans_log)
+                        db_session.commit()
+                    except Exception as e:
+                        print("Error logging timeout answer:", e)
+                        db_session.rollback()
+                        
+                p['streak'] = 0
+                p['wrong_answers'] += 1
+                p['total_time'] += float(limit)
+                
+                socketio.emit('streak_update', {
+                    'streak': 0,
+                    'is_correct': False,
+                    'explanation': room['active_question'].explanation,
+                    'article_name': room['active_question'].article_name
+                }, to=sid)
+                
+        reveal_answers(room_code)
+    except Exception as e:
+        print("Error handling timeout:", e)
 
-    def guest_name(self, payload):
-        """Rename the guest name instead of hex values"""
-        user = self.users.get(payload.get("user_id"))
-        name = payload.get("name", "")
-        if user and 1 < len(name) < 15:
-            payload["name"] = user["name"] = name + " (guest)"
-            self.emit("guest_name", payload)
+def reveal_answers(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            q = room['active_question']
+            room['active_question'] = None
+            room['timer_active'] = False
+            
+        correct_key = q.correct_answer.strip().lower()
+        
+        scores_update = {}
+        for sid, p in room['players'].items():
+            scores_update[sid] = p['score']
+            
+        socketio.emit('answer_result', {
+            'correct_answer': correct_key,
+            'explanation': q.explanation,
+            'article_name': q.article_name,
+            'scores': scores_update
+        }, to=room_code)
+        
+        socketio.emit('leaderboard_update', {
+            'players': get_room_players_list(room_code)
+        }, to=room_code)
+        
+        def auto_advance(rc):
+            socketio.sleep(5.0)
+            send_next_question(rc)
+            
+        socketio.start_background_task(auto_advance, room_code)
+    except Exception as e:
+        print("Error revealing answers:", e)
 
-    def category_vote(self, payload):
-        """handle the voting for categories"""
-        user = self.users.get(payload.get("user_id"))
-        id = payload.get("category_id")
-        if user and id:
-            user["category_id"] = int(id)
-            categories = self.info["categories"]
-            self.emit("votes", categories)
-            self.category_id = max(categories, key=categories.get)
+@socketio.on('request_next')
+def on_request_next():
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        room = rooms[room_code]
+        if room['host_sid'] != sid:
+            emit('error', {'message': 'Chỉ có trưởng phòng mới chuyển câu tiếp được!'})
+            return
+        
+        send_next_question(room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi chuyển câu tiếp: {str(e)}"})
+
+def end_game(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            room['started'] = False
+            
+        sorted_players = sorted(room['players'].items(), key=lambda x: x[1]['score'], reverse=True)
+        badges_unlocked_all = {}
+        
+        for rank, (sid, p) in enumerate(sorted_players, 1):
+            if p['user_id']:
+                user = db_session.query(User).filter_by(id=p['user_id']).first()
+                if user:
+                    user.total_games += 1
+                    user.total_score += p['score']
+                    user.total_tries += (p['wrong_answers'] + len(p['articles_correct']))
+                    user.right_tries += len(p['articles_correct'])
+                    if p['best_streak'] > user.best_streak:
+                        user.best_streak = p['best_streak']
+                    
+                    db_session.merge(user)
+                    db_session.commit()
+                    
+                    game_result = {
+                        'max_streak': p['best_streak'],
+                        'articles_correct': list(p['articles_correct']),
+                        'final_rank': rank,
+                        'total_time': p['total_time'],
+                        'wrong_answers': p['wrong_answers']
+                    }
+                    new_badges = check_and_award_badges(p['user_id'], game_result)
+                    if new_badges:
+                        badges_unlocked_all[sid] = new_badges
+                        
+        socketio.emit('game_over', {
+            'final_scores': [{
+                'sid': sid,
+                'name': p['name'],
+                'avatar': p['avatar'],
+                'score': p['score'],
+                'best_streak': p['best_streak'],
+                'wrong_answers': p['wrong_answers'],
+                'total_time': p['total_time']
+            } for sid, p in sorted_players],
+            'badges_earned': badges_unlocked_all
+        }, to=room_code)
+    except Exception as e:
+        print("Error ending game:", e)
+
+@socketio.on('submit_answer')
+def on_submit_answer(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        room = rooms[room_code]
+        p = room['players'].get(sid)
+        if not p or not room['active_question']:
+            return
+        if sid in room['player_answers_submitted']:
+            return
+            
+        answer_text = data.get('answer', '')
+        time_taken = float(data.get('time_taken', 0.0))
+        q = room['active_question']
+        
+        is_correct = False
+        val_clean = answer_text.strip().lower()
+        if val_clean in ['a', 'b', 'c', 'd']:
+            is_correct = (q.correct_answer.strip().lower() == val_clean)
+        else:
+            correct_text = getattr(q, f"option_{q.correct_answer.strip().lower()}", "")
+            if correct_text and correct_text.strip().lower() == val_clean:
+                is_correct = True
+                
+        multiplier = DIFFICULTY_CONFIG[room['difficulty']]['score_multiplier']
+        time_limit = DIFFICULTY_CONFIG[room['difficulty']]['time_per_question']
+        
+        score = 0
+        if is_correct:
+            time_bonus = max(0.0, (time_limit - time_taken) / time_limit)
+            base_score = 100
+            score = int(base_score * multiplier * (0.5 + 0.5 * time_bonus))
+            
+            p['score'] += score
+            if not p.get('used_lifeline_on_this'):
+                p['streak'] += 1
+                if p['streak'] > p['best_streak']:
+                    p['best_streak'] = p['streak']
+            p['articles_correct'].add(q.article_id)
+        else:
+            p['streak'] = 0
+            p['wrong_answers'] += 1
+            
+        p['total_time'] += time_taken
+        
+        room['player_answers_submitted'][sid] = {
+            'answer': answer_text,
+            'is_correct': is_correct,
+            'score': score,
+            'time_taken': time_taken
+        }
+        
+        if p['user_id']:
+            try:
+                ans_log = PlayerAnswer(
+                    user_id=p['user_id'],
+                    game_id=room['game_id'],
+                    question_id=q.id,
+                    article_id=q.article_id,
+                    is_correct=is_correct,
+                    time_taken=time_taken,
+                    difficulty=room['difficulty']
+                )
+                db_session.add(ans_log)
+                db_session.commit()
+            except Exception as e:
+                print("Error logging answer:", e)
+                db_session.rollback()
+                
+        emit('streak_update', {
+            'streak': p['streak'],
+            'is_correct': is_correct,
+            'explanation': q.explanation,
+            'article_name': q.article_name
+        })
+        
+        if len(room['player_answers_submitted']) == len(room['players']):
+            if room.get('timer_thread'):
+                room['timer_thread'].cancel()
+            reveal_answers(room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi nộp câu trả lời: {str(e)}"})
+
+@socketio.on('use_lifeline')
+def on_use_lifeline(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        room = rooms[room_code]
+        p = room['players'].get(sid)
+        if not p or not room['active_question']:
+            return
+            
+        lifeline_type = data.get('type')
+        if not lifeline_type or p['used_lifelines'].get(lifeline_type):
+            return
+            
+        p['used_lifelines'][lifeline_type] = True
+        p['used_lifeline_on_this'] = True
+        
+        q = room['active_question']
+        
+        if lifeline_type == 'fifty_fifty':
+            wrong_options = []
+            for opt in ['a', 'b', 'c', 'd']:
+                if opt != q.correct_answer.strip().lower():
+                    wrong_options.append(opt)
+            remove_options = random.sample(wrong_options, 2)
+            emit('fifty_fifty_result', {
+                'remove_options': remove_options
+            })
+        elif lifeline_type == 'hint':
+            hint = q.explanation.split('.')[0] + '.'
+            emit('hint_result', {
+                'hint': hint
+            })
+    except Exception as e:
+        emit('error', {'message': f"Lỗi dùng lifeline: {str(e)}"})
+
+@socketio.on('leave_room')
+def on_leave_room():
+    sid = request.sid
+    room_code = get_room_by_sid(sid)
+    if not room_code:
+        return
+    handle_player_departure(sid, room_code)
+
+@socketio.on('disconnect')
+def on_disconnect():
+    sid = request.sid
+    room_code = get_room_by_sid(sid)
+    if not room_code:
+        return
+    handle_player_departure(sid, room_code)
+
+def handle_player_departure(sid, room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            if sid in room['players']:
+                player = room['players'].pop(sid)
+                leave_room(room_code, sid=sid)
+                
+        socketio.emit('player_left', {
+            'sid': sid,
+            'name': player['name'],
+            'players': get_room_players_list(room_code)
+        }, to=room_code)
+        
+        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+        
+        if not room['players']:
+            if room.get('timer_thread'):
+                room['timer_thread'].cancel()
+            with room_lock:
+                rooms.pop(room_code, None)
+        elif room['host_sid'] == sid:
+            next_host = list(room['players'].keys())[0]
+            room['host_sid'] = next_host
+            socketio.emit('new_host', {
+                'host_sid': next_host
+            }, to=room_code)
+    except Exception as e:
+        print("Error handling player departure:", e)

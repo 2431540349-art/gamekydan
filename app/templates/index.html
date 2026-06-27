@@ -20,7 +20,7 @@
             
             <!-- Join Room Form -->
             <form action="{{ url_for('main.join_room_route') }}" method="POST" class="flex gap-1" style="flex: 1; max-width: 350px;">
-                <input type="text" name="room_code" class="input-field" placeholder="Nhập mã phòng (6 ký tự)" required maxlength="6" style="text-transform: uppercase; width: 100%;">
+                <input type="text" name="room_code" class="input-field" placeholder="Nhập mã phòng (ví dụ: ABC12)" required maxlength="5" style="text-transform: uppercase; width: 100%;">
                 <button type="submit" class="btn btn-accent btn-lg" style="white-space: nowrap;">Vào phòng</button>
             </form>
         {% else %}

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{% block title %}LAW - Quiz Game{% endblock %}</title>
+    <title>{% block title %}CYBER SHIELD - Quiz Game{% endblock %}</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,9 +12,9 @@
                 extend: {
                     colors: {
                         dataguard: {
-                            blue: '#1a56db',
-                            navy: '#0f172a',
-                            amber: '#f59e0b'
+                            blue: '#0f62fe',
+                            teal: '#14b8a6',
+                            mint: '#ccfbf1'
                         }
                     }
                 }
@@ -37,8 +37,7 @@
         <div class="navbar-inner">
             <a href="/" class="logo">
                 <span class="logo-icon"></span>
-                <span class="brand-main">LAW</span>
-                <span class="brand-auth">LAW</span>
+                <span class="brand-main">CYBER SHIELD</span>
             </a>
 
             <div class="cyber-header-tags" aria-hidden="true">
@@ -110,6 +109,13 @@
             const menuButton = document.querySelector('.mobile-menu-btn');
             const siteNav = document.getElementById('site-nav');
             const flashMessages = document.querySelector('.flash-messages');
+            const setViewportHeight = () => {
+                document.documentElement.style.setProperty('--app-vh', `${window.innerHeight * 0.01}px`);
+                document.body.classList.toggle('compact-mobile', window.innerWidth <= 640);
+            };
+
+            setViewportHeight();
+            window.addEventListener('resize', setViewportHeight);
 
             if (flashMessages) {
                 setTimeout(() => {

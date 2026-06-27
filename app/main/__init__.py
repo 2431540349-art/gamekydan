@@ -12,6 +12,60 @@ from app.websocket import rooms
 from models.category import Category
 from models.user import User
 
+FIXED_ROOM_CODE = "2026"
+STUDENTS = [
+    {"mssv": "2431540347", "name": "Huỳnh Trọng Hiệp", "gender": "Nam", "group": "1"},
+    {"mssv": "2431540308", "name": "Hoàng Yến Nhi", "gender": "Nữ", "group": "1"},
+    {"mssv": "2431540315", "name": "Lưu Ngọc Thiện", "gender": "Nữ", "group": "1"},
+    {"mssv": "2431540340", "name": "Trần Thị Cẩm Tiên", "gender": "Nữ", "group": "1"},
+    {"mssv": "2431540329", "name": "Lê Quang Vinh", "gender": "Nam", "group": "1"},
+    {"mssv": "2431540067", "name": "Nguyễn Tiến Đạt", "gender": "Nam", "group": "10"},
+    {"mssv": "2431540013", "name": "Lê Nguyễn Khôi Nguyên", "gender": "Nam", "group": "10"},
+    {"mssv": "2431540012", "name": "Ngô Đồng Quang Nguyên", "gender": "Nam", "group": "10"},
+    {"mssv": "2331540316", "name": "Nguyễn Thanh Tuấn", "gender": "Nam", "group": "10"},
+    {"mssv": "2431540022", "name": "Trương Quốc Tuấn", "gender": "Nam", "group": "10"},
+    {"mssv": "2431540069", "name": "Nguyễn Hoàng Long", "gender": "Nam", "group": "2"},
+    {"mssv": "2431540096", "name": "Phạm Minh Nhật", "gender": "Nam", "group": "2"},
+    {"mssv": "2431540078", "name": "Đỗ Thị Như Quỳnh", "gender": "Nữ", "group": "2"},
+    {"mssv": "2431540084", "name": "Lê Nguyễn Ngọc Tâm", "gender": "Nữ", "group": "2"},
+    {"mssv": "2431540111", "name": "Lê Ngọc Khánh Trình", "gender": "Nam", "group": "2"},
+    {"mssv": "2431540115", "name": "Mai Ngọc Anh", "gender": "Nam", "group": "3"},
+    {"mssv": "2431540120", "name": "Lê Dũng", "gender": "Nam", "group": "3"},
+    {"mssv": "2431540117", "name": "Nguyễn Thảo Nhi", "gender": "Nữ", "group": "3"},
+    {"mssv": "2431540109", "name": "Nguyễn Tứ Tâm", "gender": "Nam", "group": "3"},
+    {"mssv": "2431540234", "name": "Châu Nhựt Tân", "gender": "Nam", "group": "3"},
+    {"mssv": "2431540081", "name": "Nguyễn Ngọc Mai Thy", "gender": "Nữ", "group": "3"},
+    {"mssv": "2331540055", "name": "LƯƠNG THÁI KHANG", "gender": "Nam", "group": "4"},
+    {"mssv": "2431540061", "name": "Phan Tuấn Kiệt", "gender": "Nam", "group": "4"},
+    {"mssv": "2331540004", "name": "NGUYỄN MINH SANG", "gender": "Nam", "group": "4"},
+    {"mssv": "2431540062", "name": "Bùi Trần Thanh Thiên", "gender": "Nam", "group": "4"},
+    {"mssv": "2431540065", "name": "Hồng Lê Minh Thông", "gender": "Nam", "group": "4"},
+    {"mssv": "2254810099", "name": "BÙI ĐỨC TRUNG", "gender": "Nam", "group": "4"},
+    {"mssv": "2431540274", "name": "Bùi Quốc Bảo", "gender": "Nam", "group": "6"},
+    {"mssv": "2431540209", "name": "Lạc Du Định", "gender": "Nam", "group": "6"},
+    {"mssv": "2431540284", "name": "Phạm Nguyễn Bảo Ngọc", "gender": "Nam", "group": "6"},
+    {"mssv": "2431540133", "name": "Lý Thế Vinh", "gender": "Nam", "group": "6"},
+    {"mssv": "2431540270", "name": "Phùng Văn Vũ", "gender": "Nam", "group": "6"},
+    {"mssv": "2431540029", "name": "Trần Bảo An", "gender": "Nam", "group": "7"},
+    {"mssv": "2431540020", "name": "Đinh Quỳnh Anh", "gender": "Nữ", "group": "7"},
+    {"mssv": "2431540039", "name": "Đỗ Trần Quang Anh", "gender": "Nam", "group": "7"},
+    {"mssv": "2431540016", "name": "Hà Nguyễn Gia Huy", "gender": "Nam", "group": "7"},
+    {"mssv": "2431540082", "name": "Nguyễn Hoàng Nam", "gender": "Nam", "group": "7"},
+    {"mssv": "2331540029", "name": "Hồ Thị Ánh Ngọc", "gender": "Nữ", "group": "7"},
+    {"mssv": "2431540085", "name": "Trần Việt Cường", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540072", "name": "Trần Minh Đức", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540079", "name": "Vương Huy Thắng", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540064", "name": "Trần Ngọc Trung", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540103", "name": "Nguyễn Trương Tú Anh", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540068", "name": "Vũ Trung Kiên", "gender": "Nam", "group": "8"},
+    {"mssv": "2431540032", "name": "Nguyễn Phan Khánh Vy", "gender": "Nữ", "group": "9"},
+    {"mssv": "2431540018", "name": "Trần Phúc Hoàng", "gender": "Nam", "group": "9"},
+    {"mssv": "2254810162", "name": "NGUYỄN ANH KHA", "gender": "Nam", "group": "9"},
+    {"mssv": "2431540112", "name": "Ngô Tùng Anh Tú", "gender": "Nam", "group": "9"},
+    {"mssv": "2431540027", "name": "Phan Hoàng Tý", "gender": "Nam", "group": "9"}
+]
+STUDENTS_BY_MSSV = {student["mssv"]: student for student in STUDENTS}
+
 pages = Blueprint("main", __name__)
 pages.register_blueprint(auth)
 
@@ -27,39 +81,56 @@ def home():
 @pages.route("/lobby")
 def lobby():
     """Create or Join room form selection"""
-    return render_template("lobby.html")
+    return render_template("lobby.html", students=STUDENTS)
 
 
-@pages.route("/game/create", methods=["POST"])
-def create_room():
-    import random
+def _create_game_room(player_name, room_code=FIXED_ROOM_CODE):
     import secrets
     from app.websocket import rooms, room_lock
 
-    player_name = request.form.get("player_name", "").strip()
     if not player_name:
         player_name = current_user.username if current_user.is_authenticated else "Người chơi"
 
     with room_lock:
-        room_code = f"{random.randint(0, 9999):04d}"
-        while room_code in rooms:
-            room_code = f"{random.randint(0, 9999):04d}"
-        rooms[room_code] = {
-            'host_sid': None,
-            'difficulty': 'medium',
-            'started': False,
-            'questions': [],
-            'current_index': 0,
-            'active_question': None,
-            'question_start_time': 0,
-            'player_answers_submitted': {},
-            'players': {},
-            'game_id': secrets.token_hex(8),
-            'timer_thread': None
-        }
+        if room_code not in rooms:
+            rooms[room_code] = {
+                'host_sid': None,
+                'difficulty': 'medium',
+                'started': False,
+                'questions': [],
+                'current_index': 0,
+                'active_question': None,
+                'question_start_time': 0,
+                'player_answers_submitted': {},
+                'players': {},
+                'game_id': secrets.token_hex(8),
+                'timer_thread': None
+            }
 
     session["guest_player_name"] = player_name
     return redirect(url_for("main.game_room", room_id=room_code, host="true", name=player_name))
+
+
+@pages.route("/game/student-login", methods=["POST"])
+def student_login():
+    student_mssv = request.form.get("student_mssv", "").strip()
+    student_password = request.form.get("student_password", "").strip()
+    student = STUDENTS_BY_MSSV.get(student_mssv)
+
+    if not student or student_password != student_mssv:
+        flash("MSSV hoặc mật khẩu không đúng. Vui lòng thử lại.", "error")
+        return redirect(url_for("main.lobby"))
+
+    session["guest_player_name"] = student["name"]
+    session["guest_player_group"] = student["group"]
+    flash(f"Chào {student['name']}, bạn thuộc nhóm {student['group']}.", "success")
+    return _create_game_room(student["name"])
+
+
+@pages.route("/game/create", methods=["POST"])
+def create_room():
+    player_name = request.form.get("player_name", "").strip()
+    return _create_game_room(player_name)
 
 
 @pages.route("/game/guest", methods=["POST"])

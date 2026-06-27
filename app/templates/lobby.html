@@ -5,48 +5,52 @@
 {% block content %}
 <section class="guest-entry">
     <div class="card guest-entry-card">
-        <div class="hero-badge">Chơi nhanh không cần tài khoản</div>
-        <h1>Vào phòng bằng mã 4 số</h1>
-        <p>Mỗi phòng có tối đa 10 đội, mỗi đội 5 người. Nhập tên của bạn, chọn mã phòng rồi vào chọn đội.</p>
+        <div class="hero-badge">Xác thực MSSV nhóm</div>
+        <h1>Vào phòng cố định mã 2026</h1>
+        <p>Chọn tên của bạn rồi nhập MSSV làm mật khẩu để hệ thống hiển thị nhóm và cho phép vào chơi qua phòng chung mã 2026.</p>
 
-        <form action="{{ url_for('main.guest_room_route') }}" method="POST" class="guest-room-form">
+        <form action="{{ url_for('main.student_login') }}" method="POST" class="guest-room-form">
             <div class="input-group">
-                <label for="player_name">Tên người chơi</label>
+                <label for="student_name">Tên sinh viên</label>
+                <select id="student_name" name="student_mssv" class="input-field" required>
+                    <option value="">-- Chọn tên của bạn --</option>
+                    {% for student in students %}
+                        <option value="{{ student.mssv }}" data-group="{{ student.group }}">{{ student.name }} (Nhóm {{ student.group }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="selected_group">Nhóm của bạn</label>
                 <input
                     type="text"
-                    id="player_name"
-                    name="player_name"
+                    id="selected_group"
                     class="input-field"
-                    placeholder="Ví dụ: Long"
-                    maxlength="32"
-                    required
-                    value="{{ current_user.username if current_user.is_authenticated else '' }}"
+                    placeholder="Nhóm sẽ được hiển thị khi chọn tên"
+                    readonly
                 >
             </div>
 
             <div class="input-group">
-                <label for="room_code">ID phòng 4 số</label>
+                <label for="student_password">Mật khẩu (MSSV của bạn)</label>
                 <input
-                    type="text"
-                    id="room_code"
-                    name="room_code"
-                    class="input-field room-code-input"
-                    placeholder="1234"
-                    inputmode="numeric"
-                    pattern="[0-9]{4}"
-                    minlength="4"
-                    maxlength="4"
+                    type="password"
+                    id="student_password"
+                    name="student_password"
+                    class="input-field"
+                    placeholder="Nhập MSSV để xác thực"
+                    minlength="10"
+                    maxlength="10"
                     required
                 >
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-lg">Vào phòng</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg">Xác thực và vào chơi</button>
         </form>
 
-        <form action="{{ url_for('main.create_room') }}" method="POST" class="guest-create-form">
-            <input type="hidden" name="player_name" id="quick-player-name">
-            <button type="submit" class="btn btn-outline btn-block">Tạo phòng 4 số ngẫu nhiên</button>
-        </form>
+        <div class="student-guide mt-4">
+            <p><strong>Lưu ý:</strong> Sau khi chọn tên, hệ thống sẽ hiển thị nhóm của bạn. Để vào chơi, hãy nhập đúng MSSV của chính bạn làm mật khẩu.</p>
+        </div>
     </div>
 </section>
 {% endblock %}
@@ -54,15 +58,15 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const playerName = document.getElementById('player_name');
-        const quickName = document.getElementById('quick-player-name');
-        const quickForm = document.querySelector('.guest-create-form');
+        const studentNameSelect = document.getElementById('student_name');
+        const selectedGroup = document.getElementById('selected_group');
 
-        if (!playerName || !quickName || !quickForm) return;
-
-        quickForm.addEventListener('submit', () => {
-            quickName.value = playerName.value.trim() || 'Người chơi';
-        });
+        if (studentNameSelect && selectedGroup) {
+            studentNameSelect.addEventListener('change', () => {
+                const selectedOption = studentNameSelect.options[studentNameSelect.selectedIndex];
+                selectedGroup.value = selectedOption?.dataset?.group || "";
+            });
+        }
     });
 </script>
 {% endblock %}

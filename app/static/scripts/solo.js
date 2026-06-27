@@ -33,8 +33,7 @@ window.addEventListener("load", () => {
     payload.answers.forEach((answer) => {
       const elem = document.createElement("button");
       elem.innerHTML = answer;
-      elem.className =
-        "btn-sec bg-sky-100 rounded-xl mt-2 min-w-[48%] md:w-[49%] w-full";
+      elem.className = "solo-answer-btn";
       question.answers.append(elem);
       elem.onclick = async function () {
         const { points } = await answerQuestion(question.id, answer);

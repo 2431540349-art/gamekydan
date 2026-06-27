@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}DataGuard VN - Quiz Game{% endblock %}</title>
     
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dataguard: {
+                            blue: '#1a56db',
+                            navy: '#0f172a',
+                            amber: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
     <!-- Socket.IO Client -->
@@ -12,14 +28,25 @@
     
     {% block head %}{% endblock %}
 </head>
-<body>
+<body
+    data-user-id="{% if current_user.is_authenticated %}{{ current_user.id }}{% endif %}"
+    data-username="{% if current_user.is_authenticated %}{{ current_user.username }}{% endif %}"
+>
     <header class="navbar">
         <div class="navbar-inner">
             <a href="/" class="logo">
                 <span class="logo-icon">🛡️</span> DataGuard VN
             </a>
+
+            <button class="mobile-menu-btn" type="button" aria-label="Mở menu" aria-expanded="false" aria-controls="site-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             
-            <nav class="nav-links">
+            <nav class="nav-links" id="site-nav">
+                <a href="/">Trang chủ</a>
+                <a href="/lobby">Chơi ngay</a>
                 {% if current_user.is_authenticated %}
                     <a href="/profile" class="nav-user">
                         👤 {{ current_user.username }}
@@ -36,18 +63,13 @@
     <main id="app-main">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages" style="position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;">
+                <div class="flash-messages">
                     {% for category, message in messages %}
-                        <div class="card card-glass" style="padding: 1rem; border-left: 4px solid {% if category == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+                        <div class="card card-glass flash-message {% if category == 'error' %}flash-message-error{% else %}flash-message-success{% endif %}">
                             {{ message }}
                         </div>
                     {% endfor %}
                 </div>
-                <script>
-                    setTimeout(() => {
-                        document.querySelector('.flash-messages').style.display = 'none';
-                    }, 5000);
-                </script>
             {% endif %}
         {% endwith %}
 
@@ -59,10 +81,32 @@
     
     <script>
         // Set user info globally for JS
+        const currentUserElement = document.body;
         window.CURRENT_USER = {
-            id: {% if current_user.is_authenticated %}{{ current_user.id }}{% else %}null{% endif %},
-            username: "{% if current_user.is_authenticated %}{{ current_user.username }}{% else %}{% endif %}"
+            id: currentUserElement.dataset.userId ? Number(currentUserElement.dataset.userId) : null,
+            username: currentUserElement.dataset.username || ""
         };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuButton = document.querySelector('.mobile-menu-btn');
+            const siteNav = document.getElementById('site-nav');
+            const flashMessages = document.querySelector('.flash-messages');
+
+            if (flashMessages) {
+                setTimeout(() => {
+                    flashMessages.style.display = 'none';
+                }, 5000);
+            }
+
+            if (!menuButton || !siteNav) return;
+
+            menuButton.addEventListener('click', () => {
+                const isOpen = siteNav.classList.toggle('is-open');
+                menuButton.classList.toggle('is-open', isOpen);
+                menuButton.setAttribute('aria-expanded', String(isOpen));
+                menuButton.setAttribute('aria-label', isOpen ? 'Đóng menu' : 'Mở menu');
+            });
+        });
     </script>
     
     {% block scripts %}{% endblock %}

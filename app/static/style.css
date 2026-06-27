@@ -80,11 +80,13 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
+    position: relative;
 }
 
 .logo {
     font-weight: 800;
-    font-size: 1.5rem;
+    font-size: 1.15rem;
     color: var(--primary);
     text-decoration: none;
     display: flex;
@@ -93,13 +95,27 @@ body::before {
 }
 
 .logo-icon {
-    font-size: 1.75rem;
+    font-size: 1.45rem;
 }
 
 .nav-links {
-    display: flex;
+    display: none;
     gap: 0.5rem;
-    align-items: center;
+    align-items: stretch;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.nav-links.is-open {
+    display: flex;
 }
 
 .nav-links a, .nav-links button {
@@ -113,6 +129,7 @@ body::before {
     border: none;
     background: none;
     cursor: pointer;
+    text-align: left;
 }
 
 .nav-links a:hover, .nav-links button:hover {
@@ -130,6 +147,71 @@ body::before {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--primary);
+}
+
+.mobile-menu-btn {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    background: white;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+.mobile-menu-btn span {
+    width: 20px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--primary);
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.mobile-menu-btn.is-open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+
+.mobile-menu-btn.is-open span:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-btn.is-open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+@media (min-width: 768px) {
+    .logo {
+        font-size: 1.5rem;
+    }
+
+    .logo-icon {
+        font-size: 1.75rem;
+    }
+
+    .mobile-menu-btn {
+        display: none;
+    }
+
+    .nav-links {
+        display: flex;
+        position: static;
+        flex-direction: row;
+        align-items: center;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .nav-links a, .nav-links button {
+        text-align: center;
+    }
 }
 
 /* === BUTTONS === */
@@ -241,6 +323,29 @@ body::before {
     border: 1px solid rgba(255,255,255,0.5);
 }
 
+.flash-messages {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 2rem));
+}
+
+.flash-message {
+    padding: 1rem;
+}
+
+.flash-message-error {
+    border-left: 4px solid var(--danger);
+}
+
+.flash-message-success {
+    border-left: 4px solid var(--success);
+}
+
 /* === INPUTS === */
 .input-group {
     display: flex;
@@ -277,7 +382,7 @@ body::before {
 .hero-section {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 4rem 1.5rem;
+    padding: 3rem 1.25rem;
     text-align: center;
 }
 
@@ -318,6 +423,20 @@ body::before {
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+.hero-actions > * {
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .hero-section {
+        padding: 4rem 1.5rem;
+    }
+
+    .hero-actions > * {
+        width: auto;
+    }
 }
 
 .hero-shield {
@@ -438,9 +557,15 @@ body::before {
 /* Difficulty Cards */
 .difficulty-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 0.75rem;
     margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .difficulty-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 .diff-card {
@@ -545,7 +670,7 @@ body::before {
 .game-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 1.5rem;
+    padding: 1rem;
 }
 
 .game-header {
@@ -611,7 +736,7 @@ body::before {
 
 /* Question */
 .question-card {
-    padding: 2rem;
+    padding: 1.25rem;
 }
 
 .question-article {
@@ -637,13 +762,23 @@ body::before {
 
 .answers-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
 }
 
-@media (max-width: 600px) {
+@media (min-width: 640px) {
     .answers-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .game-container {
+        padding: 1rem 1.5rem;
+    }
+
+    .question-card {
+        padding: 2rem;
     }
 }
 
@@ -662,6 +797,7 @@ body::before {
     transition: all 0.2s;
     color: var(--text-primary);
     font-weight: 500;
+    min-height: 72px;
 }
 
 .answer-btn:hover:not(.disabled):not(.correct):not(.wrong) {
@@ -713,6 +849,56 @@ body::before {
 .answer-btn.disabled, .answer-btn.eliminated {
     opacity: 0.3;
     pointer-events: none;
+}
+
+.solo-answers-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.solo-answer-btn {
+    width: 100%;
+    min-height: 64px;
+    padding: 1rem;
+    border: 2px solid rgba(26,86,219,0.12);
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--text-primary);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+}
+
+.solo-answer-btn:hover {
+    border-color: var(--primary);
+    background: rgba(26,86,219,0.04);
+    transform: translateY(-1px);
+}
+
+.solo-answer-btn.bg-green-300 {
+    border-color: var(--success);
+    background: rgba(16,185,129,0.14);
+}
+
+.solo-answer-btn.bg-red-300 {
+    border-color: var(--danger);
+    background: rgba(239,68,68,0.12);
+}
+
+@media (min-width: 640px) {
+    .solo-answers-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .solo-answers-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
 }
 
 @keyframes correct-flash {

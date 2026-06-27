@@ -196,6 +196,7 @@
         roomCode: "{{ room_code }}",
         isHost: {{ 'true' if is_host else 'false' }},
         playerName: {{ player_name|default('Người chơi')|tojson }},
+        playerTeam: {{ player_team|tojson }},
         avatars: ["👮", "👨‍⚖️", "🕵️", "👨‍💻", "👩‍💼", "🛡️", "📜", "⚖️"]
     };
     window.CURRENT_USER = {

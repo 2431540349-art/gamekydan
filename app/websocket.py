@@ -232,11 +232,23 @@ def on_join_room(data):
             
             is_player_host = (room['host_sid'] == request.sid)
             
+            team_id = data.get('team')
+            if isinstance(team_id, str) and team_id.isdigit():
+                team_id = int(team_id)
+            if isinstance(team_id, int) and 1 <= team_id <= TEAM_COUNT:
+                members_in_team = [player for player in room['players'].values() if player.get('team') == team_id]
+                if len(members_in_team) < TEAM_SIZE:
+                    assigned_team = team_id
+                else:
+                    assigned_team = None
+            else:
+                assigned_team = None
+
             room['players'][request.sid] = {
                 'user_id': user_db_id,
                 'name': name,
                 'avatar': avatar,
-                'team': None,
+                'team': assigned_team,
                 'score': 0,
                 'streak': 0,
                 'best_streak': 0,
@@ -302,6 +314,9 @@ def on_select_team(data):
                 emit('error', {'message': 'Không thể đổi đội khi ván đấu đã bắt đầu!'})
                 return
             if sid not in room['players']:
+                return
+            if room['players'][sid].get('team'):
+                emit('error', {'message': 'Bạn đã được gán đội và không thể đổi.'})
                 return
 
             members_in_team = [

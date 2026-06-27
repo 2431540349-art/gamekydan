@@ -81,7 +81,11 @@ def home():
 @pages.route("/lobby")
 def lobby():
     """Create or Join room form selection"""
-    return render_template("lobby.html", students=STUDENTS)
+    room_code = request.args.get("room_code", "").strip()
+    if not room_code:
+        flash("Vui lòng nhập mã phòng từ trang chủ.", "error")
+        return redirect(url_for("main.home"))
+    return render_template("lobby.html", students=STUDENTS, room_code=room_code)
 
 
 def _create_game_room(player_name, room_code=FIXED_ROOM_CODE):

@@ -9,9 +9,23 @@
     </div>
 
     <span class="hero-shield" aria-hidden="true">🛡️</span>
-    <div class="hero-actions">
-        <a href="/lobby" class="btn btn-primary btn-lg">Chơi ngay</a>
-    </div>
+    <form action="{{ url_for('main.lobby') }}" method="get" class="hero-actions hero-room-form">
+        <div class="input-group">
+            <label for="home_room_code">Mã phòng</label>
+            <input
+                id="home_room_code"
+                name="room_code"
+                class="input-field"
+                type="text"
+                inputmode="numeric"
+                pattern="\d{4}"
+                maxlength="4"
+                placeholder="Nhập mã phòng 4 số"
+                required
+            >
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Chơi ngay</button>
+    </form>
 
     <div class="team-mountain" aria-label="Đội hình người chơi">
         <div class="mountain-row mountain-row-top">

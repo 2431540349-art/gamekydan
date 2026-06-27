@@ -212,6 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasAnswered = false;
     let currentLifelines = { fifty_fifty: true, hint: true };
 
+    const teamLocked = Boolean(window.GAME_CONFIG.playerTeam);
+
     // Initialization
     function init() {
         setupSocket();
@@ -230,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
             socket.emit('join_room', { 
                 room_code: window.GAME_CONFIG.roomCode,
                 avatar: myAvatar,
-                name: window.GAME_CONFIG.playerName || window.CURRENT_USER.username || 'Người chơi'
+                name: window.GAME_CONFIG.playerName || window.CURRENT_USER.username || 'Người chơi',
+                team: window.GAME_CONFIG.playerTeam
             });
         });
 
@@ -432,6 +435,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         myAvatar = window.GAME_CONFIG.avatars[0];
 
+        if (window.GAME_CONFIG.playerTeam) {
+            myTeam = Number(window.GAME_CONFIG.playerTeam);
+            if (selectedTeamStatus) {
+                selectedTeamStatus.textContent = `Bạn đang ở Đội ${myTeam}`;
+            }
+            if (btnReady) {
+                btnReady.disabled = false;
+            }
+        }
+
         // Difficulty (Host only)
         if (window.GAME_CONFIG.isHost) {
             document.querySelectorAll('.diff-card').forEach(el => {
@@ -470,9 +483,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Team selection
         if (teamSelector) {
+            if (teamLocked) {
+                teamSelector.classList.add('team-locked');
+            }
             teamSelector.addEventListener('click', (e) => {
                 const card = e.target.closest('.team-card');
-                if (!card || card.classList.contains('full')) return;
+                if (!card || card.classList.contains('full') || teamLocked) return;
 
                 SoundEffects.playClick();
                 socket.emit('select_team', { team: Number(card.dataset.team) });

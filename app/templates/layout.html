@@ -53,14 +53,13 @@
             
             <nav class="nav-links" id="site-nav">
                 <a href="/">Trang chủ</a>
-                <a href="/lobby">Chơi ngay</a>
                 {% if current_user.is_authenticated %}
                     <a href="/profile" class="nav-user">
                         👤 {{ current_user.username }}
                     </a>
                     <a href="/logout" class="btn-ghost btn-sm">Thoát</a>
                 {% else %}
-                    <a href="/lobby" class="btn-primary btn-sm">Chơi ngay</a>
+                    <a href="/" class="btn-primary btn-sm">Chơi ngay</a>
                 {% endif %}
             </nav>
 

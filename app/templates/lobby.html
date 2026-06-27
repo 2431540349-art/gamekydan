@@ -6,16 +6,27 @@
 <section class="guest-entry">
     <div class="card guest-entry-card">
         <div class="hero-badge">Xác thực MSSV nhóm</div>
-        <h1>Vào phòng cố định mã 2026</h1>
-        <p>Chọn tên của bạn rồi nhập MSSV làm mật khẩu để hệ thống hiển thị nhóm và cho phép vào chơi qua phòng chung mã 2026.</p>
+        <h1>Vào phòng mã {{ room_code }}</h1>
+        <p>Chọn tên và xác thực MSSV để hệ thống tự gán đội theo nhóm của bạn và vào chơi.</p>
 
         <form action="{{ url_for('main.student_login') }}" method="POST" class="guest-room-form">
+            <div class="input-group">
+                <label for="room_code">Mã phòng</label>
+                <input
+                    type="text"
+                    id="room_code"
+                    name="room_code"
+                    class="input-field"
+                    value="{{ room_code }}"
+                    readonly
+                >
+            </div>
             <div class="input-group">
                 <label for="student_name">Tên sinh viên</label>
                 <select id="student_name" name="student_mssv" class="input-field" required>
                     <option value="">-- Chọn tên của bạn --</option>
                     {% for student in students %}
-                        <option value="{{ student.mssv }}" data-group="{{ student.group }}">{{ student.name }} (Nhóm {{ student.group }})</option>
+                        <option value="{{ student.mssv }}" data-group="{{ student.group }}">{{ student.name }}</option>
                     {% endfor %}
                 </select>
             </div>

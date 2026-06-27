@@ -3151,9 +3151,6 @@ body.compact-mobile .home-hero {
     padding-bottom: 0.9rem;
 }
 
-body.compact-mobile .home-hero + .security-footer {
-    display: none;
-}
 
 body.compact-mobile .home-hero .hero-actions {
     gap: 0.75rem;

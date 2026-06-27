@@ -18,6 +18,12 @@ from app.round1_questions import (
     ROUND1_READ_SECONDS,
     allocate_round1_questions,
 )
+from app.round2_questions import (
+    ROUND2_ANSWER_SECONDS,
+    ROUND2_QUESTIONS_PER_TEAM,
+    ROUND2_READ_SECONDS,
+    allocate_round2_questions,
+)
 
 # SocketIO object initialized without app, will be initialized via init_app in app/__init__.py
 socketio = SocketIO(cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
@@ -66,12 +72,13 @@ TOURNAMENT_ROUND_CONFIG = {
     },
     2: {
         'name': 'Vòng 2 — Bán kết',
-        'teams_in': 5,
-        'teams_advance': 3,
-        'question_count': 4,
-        'time_per_question': 12,
+        'teams_in': 7,
+        'teams_advance': 5,
+        'question_count': ROUND2_QUESTIONS_PER_TEAM,
+        'time_per_question': ROUND2_ANSWER_SECONDS,
+        'read_seconds': ROUND2_READ_SECONDS,
         'break_seconds': 420,
-        'description': '5 đội, chọn 3 đội vào chung kết',
+        'description': '7 đội theo 7 chủ đề, chọn 5 đội đi tiếp',
     },
     3: {
         'name': 'Vòng 3 — Chung kết',
@@ -582,6 +589,12 @@ def load_round_questions(room, round_num):
         room['questions'] = []
         room['current_index'] = 0
         return
+    if round_num == 2:
+        room['round2_assignments'] = allocate_round2_questions(room.get('active_teams') or set())
+        room['round2_question_index'] = 0
+        room['questions'] = []
+        room['current_index'] = 0
+        return
 
     diff = room['difficulty']
     q_count = cfg['question_count']
@@ -802,6 +815,166 @@ def reveal_round1_answers(room_code):
     except Exception as e:
         print("Error revealing round 1 answers:", e)
 
+def send_next_round2_question(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+
+        idx = room.get('round2_question_index', 0)
+        if idx >= ROUND2_QUESTIONS_PER_TEAM:
+            end_tournament_round(room_code)
+            return
+
+        room['round2_question_index'] = idx + 1
+        room['current_index'] = idx + 1
+        room['player_answers_submitted'] = {}
+        room['active_questions'] = {}
+        room['active_question'] = True
+        room['question_start_time'] = time.time()
+        room['round_custom_phase'] = 'reading'
+
+        cfg = TOURNAMENT_ROUND_CONFIG[2]
+        active_sids = get_active_player_sids(room)
+        for sid in active_sids:
+            player = room['players'].get(sid)
+            team_id = player.get('team') if player else None
+            pack = (room.get('round2_assignments') or {}).get(team_id)
+            if not pack:
+                continue
+            q = pack['questions'][idx]
+            room['active_questions'][sid] = q
+            player['used_lifeline_on_this'] = False
+            socketio.emit('new_question', {
+                'id': q.id,
+                'question': q.content,
+                'options': [q.option_a, q.option_b, q.option_c],
+                'article': pack['title'],
+                'article_name': q.article_name,
+                'difficulty': q.difficulty,
+                'current_q': idx + 1,
+                'total_q': ROUND2_QUESTIONS_PER_TEAM,
+                'round': 2,
+                'round_name': cfg['name'],
+                'time_per_question': ROUND2_ANSWER_SECONDS,
+                'read_seconds': ROUND2_READ_SECONDS,
+                'answer_seconds': ROUND2_ANSWER_SECONDS,
+                'answer_locked': True,
+            }, to=sid)
+
+        room['timer_active'] = True
+        socketio.start_background_task(
+            run_custom_round_timer,
+            room_code,
+            room['current_index'],
+            ROUND2_READ_SECONDS,
+            ROUND2_ANSWER_SECONDS,
+            handle_custom_question_timeout,
+        )
+    except Exception as e:
+        socketio.emit('error', {'message': f"Lỗi chuyển câu vòng 2: {str(e)}"}, to=room_code)
+
+def run_custom_round_timer(room_code, question_index, read_seconds, answer_seconds, timeout_handler):
+    try:
+        for t in range(read_seconds, -1, -1):
+            with room_lock:
+                if room_code not in rooms:
+                    return
+                room = rooms[room_code]
+                if not room['started'] or room['current_index'] != question_index or not room.get('timer_active'):
+                    return
+            socketio.emit('reading_tick', {'remaining': t}, to=room_code)
+            if t > 0:
+                socketio.sleep(1.0)
+
+        with room_lock:
+            if room_code not in rooms:
+                return
+            rooms[room_code]['round_custom_phase'] = 'answer'
+        socketio.emit('answer_phase_started', {'seconds': answer_seconds}, to=room_code)
+
+        for t in range(answer_seconds, -1, -1):
+            with room_lock:
+                if room_code not in rooms:
+                    return
+                room = rooms[room_code]
+                if not room['started'] or room['current_index'] != question_index or not room.get('timer_active'):
+                    return
+            socketio.emit('timer_tick', t, to=room_code)
+            if t == 0:
+                timeout_handler(room_code)
+                return
+            socketio.sleep(1.0)
+    except Exception as ex:
+        print("Error in custom round timer:", ex)
+
+def handle_custom_question_timeout(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            if not room.get('active_questions'):
+                return
+            limit = get_round_time_limit(room)
+
+        for sid in get_active_player_sids(room):
+            p = room['players'].get(sid)
+            q = room.get('active_questions', {}).get(sid)
+            if not p or not q or sid in room['player_answers_submitted']:
+                continue
+            p['streak'] = 0
+            p['wrong_answers'] += 1
+            p['total_time'] += float(limit)
+            socketio.emit('streak_update', {
+                'streak': 0,
+                'is_correct': False,
+                'explanation': q.explanation,
+                'article_name': q.article_name
+            }, to=sid)
+
+        reveal_custom_answers(room_code)
+    except Exception as e:
+        print("Error handling custom round timeout:", e)
+
+def reveal_custom_answers(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            active_questions = dict(room.get('active_questions') or {})
+            current_round = room.get('current_round', 0)
+            room['active_questions'] = {}
+            room['active_question'] = None
+            room['timer_active'] = False
+            room['round_custom_phase'] = None
+
+        scores_update = {sid: p['score'] for sid, p in room['players'].items()}
+        for sid, q in active_questions.items():
+            socketio.emit('answer_result', {
+                'correct_answer': q.correct_answer.strip().lower(),
+                'explanation': q.explanation,
+                'article_name': q.article_name,
+                'scores': scores_update
+            }, to=sid)
+
+        socketio.emit('leaderboard_update', {
+            'players': get_room_players_list(room_code),
+            'team_rankings': build_tournament_leaderboard_payload(room),
+            'tournament_mode': True,
+            'current_round': current_round,
+        }, to=room_code)
+
+        def auto_advance(rc):
+            socketio.sleep(2.0)
+            send_next_question(rc)
+
+        socketio.start_background_task(auto_advance, room_code)
+    except Exception as e:
+        print("Error revealing custom round answers:", e)
+
 def send_next_question(room_code):
     try:
         with room_lock:
@@ -811,6 +984,9 @@ def send_next_question(room_code):
 
         if room.get('tournament_mode') and room.get('current_round') == 1:
             send_next_round1_question(room_code)
+            return
+        if room.get('tournament_mode') and room.get('current_round') == 2:
+            send_next_round2_question(room_code)
             return
             
         idx = room['current_index']
@@ -1211,8 +1387,10 @@ def on_submit_answer(data):
             return
         room = rooms[room_code]
         p = room['players'].get(sid)
-        is_round1 = room.get('tournament_mode') and room.get('current_round') == 1
-        q = (room.get('active_questions') or {}).get(sid) if is_round1 else room.get('active_question')
+        current_round = room.get('current_round') if room.get('tournament_mode') else 0
+        is_round1 = current_round == 1
+        is_custom_round = room.get('tournament_mode') and current_round in (1, 2)
+        q = (room.get('active_questions') or {}).get(sid) if is_custom_round else room.get('active_question')
         if not p or not q:
             return
         if sid in room['player_answers_submitted']:
@@ -1220,6 +1398,8 @@ def on_submit_answer(data):
         if room.get('tournament_mode') and sid not in get_active_player_sids(room):
             return
         if is_round1 and room.get('round1_phase') != 'answer':
+            return
+        if is_custom_round and not is_round1 and room.get('round_custom_phase') != 'answer':
             return
             
         answer_text = data.get('answer', '')
@@ -1235,7 +1415,7 @@ def on_submit_answer(data):
                 is_correct = True
                 
         multiplier = DIFFICULTY_CONFIG[room['difficulty']]['score_multiplier']
-        time_limit = ROUND1_ANSWER_SECONDS if is_round1 else get_round_time_limit(room)
+        time_limit = get_round_time_limit(room)
         
         score = 0
         if is_correct:
@@ -1262,7 +1442,7 @@ def on_submit_answer(data):
             'time_taken': time_taken
         }
         
-        if p['user_id'] and not getattr(q, 'is_round1_static', False):
+        if p['user_id'] and not getattr(q, 'is_static_round', False):
             try:
                 ans_log = PlayerAnswer(
                     user_id=p['user_id'],
@@ -1293,6 +1473,8 @@ game_id=room['game_id'],
                 room['timer_thread'].cancel()
             if is_round1:
                 reveal_round1_answers(room_code)
+            elif is_custom_round:
+                reveal_custom_answers(room_code)
             else:
                 reveal_answers(room_code)
     except Exception as e:

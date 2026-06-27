@@ -242,6 +242,7 @@ const resCorrect = document.getElementById('res-correct');
     let isEliminated = false;
     let sceneCountdownTimer = null;
     let roundIntroTimer = null;
+    let isAnswerLocked = false;
 
     const TOURNAMENT_ROUNDS = {
         1: { name: 'Vòng 1 — Loại sơ' },
@@ -387,6 +388,30 @@ const resCorrect = document.getElementById('res-correct');
             stopRoundIntroCountdown();
             showScreen('game');
             displayQuestion(data);
+        });
+
+        socket.on('reading_tick', (data) => {
+            const remaining = Number(data.remaining || 0);
+            gameTimer.textContent = remaining;
+            gameTimer.classList.remove('danger');
+            gameTimer.classList.add('warning');
+            if (qArticle) {
+                qArticle.textContent = `Đọc câu hỏi: ${remaining}s`;
+            }
+        });
+
+        socket.on('answer_phase_started', (data) => {
+            isAnswerLocked = false;
+            currentTimeLimit = Number(data.seconds || 5);
+            gameTimer.textContent = currentTimeLimit;
+            gameTimer.classList.remove('warning');
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('disabled');
+                btn.disabled = false;
+            });
+            if (qArticle) {
+                qArticle.textContent = 'Chọn đáp án';
+            }
         });
 
         socket.on('timer_tick', (timeLeft) => {
@@ -613,7 +638,7 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
         // Answer clicks
         answersContainer.addEventListener('click', (e) => {
             const btn = e.target.closest('.answer-btn');
-            if (!btn || hasAnswered || btn.classList.contains('disabled') || btn.classList.contains('eliminated')) return;
+            if (!btn || isAnswerLocked || hasAnswered || btn.classList.contains('disabled') || btn.classList.contains('eliminated')) return;
 
             SoundEffects.playClick();
             hasAnswered = true;
@@ -660,6 +685,7 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
 
     function displayQuestion(data) {
         hasAnswered = false;
+        isAnswerLocked = Boolean(data.answer_locked);
         expPopup.classList.remove('show');
         hintPopup.classList.add('hidden');
 
@@ -671,7 +697,9 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
             updateRoundUI(data);
         }
 
-        qArticle.textContent = data.article || "NĐ 13/2023";
+        qArticle.textContent = isAnswerLocked
+            ? `Đọc câu hỏi: ${data.read_seconds || 8}s`
+            : (data.article || "NĐ 13/2023");
         qText.textContent = data.question;
         const roundLabel = tournamentMode && currentRound
             ? `[${TOURNAMENT_ROUNDS[currentRound]?.name || 'Vòng ' + currentRound}] `
@@ -690,7 +718,8 @@ answersContainer.innerHTML = '';
         const labels = ['A', 'B', 'C', 'D'];
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
-            btn.className = 'answer-btn';
+            btn.className = `answer-btn ${isAnswerLocked ? 'disabled' : ''}`;
+            btn.disabled = isAnswerLocked;
             btn.dataset.idx = idx;
             btn.innerHTML = `
                 <span class="answer-label">${labels[idx]}</span>
@@ -702,7 +731,7 @@ answersContainer.innerHTML = '';
 
     function updatePlayerList(players) {
         lobbyPlayers.innerHTML = '';
-        playerCount.textContent = `${players.length}/50`;
+        playerCount.textContent = `${players.length}/60`;
         
         players.forEach(p => {
             const el = document.createElement('div');

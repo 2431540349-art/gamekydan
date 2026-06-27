@@ -12,6 +12,12 @@ from models.user import User
 from models.badge_definition import BadgeDefinition
 from models.player_answer import PlayerAnswer
 from models.engine.sql import session as db_session
+from app.round1_questions import (
+    ROUND1_ANSWER_SECONDS,
+    ROUND1_QUESTIONS_PER_PLAYER,
+    ROUND1_READ_SECONDS,
+    allocate_round1_questions,
+)
 
 # SocketIO object initialized without app, will be initialized via init_app in app/__init__.py
 socketio = SocketIO(cors_allowed_origins="*", async_mode='threading', logger=False, engineio_logger=False)
@@ -19,7 +25,7 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode='threading', logger=Fal
 room_lock = Lock()
 rooms = {}
 TEAM_COUNT = 10
-TEAM_SIZE = 5
+TEAM_SIZE = 6
 MAX_PLAYERS_PER_ROOM = TEAM_COUNT * TEAM_SIZE
 INTRO_SCENE_SECONDS = 12
 ROUND_INTRO_SECONDS = 5
@@ -52,8 +58,9 @@ TOURNAMENT_ROUND_CONFIG = {
         'name': 'Vòng 1 — Loại sơ',
         'teams_in': 10,
         'teams_advance': 7,
-        'question_count': 5,
-        'time_per_question': 15,
+        'question_count': ROUND1_QUESTIONS_PER_PLAYER,
+        'time_per_question': ROUND1_ANSWER_SECONDS,
+        'read_seconds': ROUND1_READ_SECONDS,
         'break_seconds': 480,
         'description': '10 đội tham gia, chọn 7 đội may mắn đi tiếp và 3 đội bị loại',
     },
@@ -341,7 +348,7 @@ def on_join_room(data):
                 emit('error', {'message': 'Ván đấu đã bắt đầu!'})
                 return
             if len(room['players']) >= MAX_PLAYERS_PER_ROOM:
-                emit('error', {'message': 'Phòng đã đủ 50 người!'})
+                emit('error', {'message': 'Phòng đã đủ 60 người!'})
                 return
                 
             user_db_id = None
@@ -569,6 +576,13 @@ def on_start_game():
 
 def load_round_questions(room, round_num):
     cfg = TOURNAMENT_ROUND_CONFIG[round_num]
+    if round_num == 1:
+        room['round1_assignments'] = allocate_round1_questions(room['players'])
+        room['round1_question_index'] = 0
+        room['questions'] = []
+        room['current_index'] = 0
+        return
+
     diff = room['difficulty']
     q_count = cfg['question_count']
     used_ids = set(room.get('used_question_ids') or [])
@@ -606,6 +620,7 @@ def start_tournament_round(room_code, round_num):
             p['used_lifeline_on_this'] = False
 
         diff = room['difficulty']
+        round_lifelines = [] if round_num == 1 else DIFFICULTY_CONFIG[diff]['lifelines']
         socketio.emit('round_started', {
             'round': round_num,
             'round_name': cfg['name'],
@@ -615,7 +630,7 @@ def start_tournament_round(room_code, round_num):
             'teams_active': sorted(room['active_teams']),
             'teams_eliminated': sorted(room.get('eliminated_teams') or set()),
             'difficulty': diff,
-            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines'],
+            'lifelines': round_lifelines,
             'tournament_mode': True,
             'total_rounds': 4,
             'team_rankings': build_tournament_leaderboard_payload(room),
@@ -624,8 +639,8 @@ def start_tournament_round(room_code, round_num):
         socketio.emit('game_started', {
             'question_count': cfg['question_count'],
             'difficulty': diff,
-            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines'],
-'tournament_mode': True,
+            'lifelines': round_lifelines,
+            'tournament_mode': True,
             'round': round_num,
             'round_name': cfg['name'],
             'round_intro_seconds': ROUND_INTRO_SECONDS if round_num == 1 else 0,
@@ -636,12 +651,167 @@ def start_tournament_round(room_code, round_num):
     except Exception as e:
         socketio.emit('error', {'message': f"Lỗi bắt đầu vòng đấu: {str(e)}"}, to=room_code)
 
+def send_next_round1_question(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+
+        idx = room.get('round1_question_index', 0)
+        if idx >= ROUND1_QUESTIONS_PER_PLAYER:
+            end_tournament_round(room_code)
+            return
+
+        active_sids = get_active_player_sids(room)
+        room['round1_question_index'] = idx + 1
+        room['current_index'] = idx + 1
+        room['player_answers_submitted'] = {}
+        room['active_questions'] = {}
+        room['active_question'] = True
+        room['question_start_time'] = time.time()
+        room['round1_phase'] = 'reading'
+
+        cfg = TOURNAMENT_ROUND_CONFIG[1]
+        for sid in active_sids:
+            q = (room.get('round1_assignments') or {}).get(sid, [])[idx]
+            room['active_questions'][sid] = q
+            if sid in room['players']:
+                room['players'][sid]['used_lifeline_on_this'] = False
+            socketio.emit('new_question', {
+                'id': q.id,
+                'question': q.content,
+                'options': [q.option_a, q.option_b, q.option_c, q.option_d],
+                'article': q.article_name,
+                'article_name': q.article_name,
+                'difficulty': q.difficulty,
+                'current_q': idx + 1,
+                'total_q': ROUND1_QUESTIONS_PER_PLAYER,
+                'round': 1,
+                'round_name': cfg['name'],
+                'time_per_question': ROUND1_ANSWER_SECONDS,
+                'read_seconds': ROUND1_READ_SECONDS,
+                'answer_seconds': ROUND1_ANSWER_SECONDS,
+                'answer_locked': True,
+            }, to=sid)
+
+        room['timer_active'] = True
+
+        def run_round1_timer(rc, q_idx):
+            try:
+                for t in range(ROUND1_READ_SECONDS, -1, -1):
+                    with room_lock:
+                        if rc not in rooms:
+                            return
+                        rm = rooms[rc]
+                        if not rm['started'] or rm['current_index'] != q_idx or not rm.get('timer_active'):
+                            return
+                    socketio.emit('reading_tick', {'remaining': t}, to=rc)
+                    if t > 0:
+                        socketio.sleep(1.0)
+
+                with room_lock:
+                    if rc not in rooms:
+                        return
+                    rooms[rc]['round1_phase'] = 'answer'
+                socketio.emit('answer_phase_started', {
+                    'seconds': ROUND1_ANSWER_SECONDS,
+                }, to=rc)
+
+                for t in range(ROUND1_ANSWER_SECONDS, -1, -1):
+                    with room_lock:
+                        if rc not in rooms:
+                            return
+                        rm = rooms[rc]
+                        if not rm['started'] or rm['current_index'] != q_idx or not rm.get('timer_active'):
+                            return
+                    socketio.emit('timer_tick', t, to=rc)
+                    if t == 0:
+                        handle_round1_question_timeout(rc)
+                        return
+                    socketio.sleep(1.0)
+            except Exception as ex:
+                print("Error in round 1 timer:", ex)
+
+        socketio.start_background_task(run_round1_timer, room_code, room['current_index'])
+    except Exception as e:
+        socketio.emit('error', {'message': f"Lỗi chuyển câu vòng 1: {str(e)}"}, to=room_code)
+
+def handle_round1_question_timeout(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            if not room.get('active_questions'):
+                return
+
+        limit = ROUND1_ANSWER_SECONDS
+        for sid in get_active_player_sids(room):
+            p = room['players'].get(sid)
+            q = room.get('active_questions', {}).get(sid)
+            if not p or not q or sid in room['player_answers_submitted']:
+                continue
+            p['streak'] = 0
+            p['wrong_answers'] += 1
+            p['total_time'] += float(limit)
+            socketio.emit('streak_update', {
+                'streak': 0,
+                'is_correct': False,
+                'explanation': q.explanation,
+                'article_name': q.article_name
+            }, to=sid)
+
+        reveal_round1_answers(room_code)
+    except Exception as e:
+        print("Error handling round 1 timeout:", e)
+
+def reveal_round1_answers(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            active_questions = dict(room.get('active_questions') or {})
+            room['active_questions'] = {}
+            room['active_question'] = None
+            room['timer_active'] = False
+            room['round1_phase'] = None
+
+        scores_update = {sid: p['score'] for sid, p in room['players'].items()}
+        for sid, q in active_questions.items():
+            socketio.emit('answer_result', {
+                'correct_answer': q.correct_answer.strip().lower(),
+                'explanation': q.explanation,
+                'article_name': q.article_name,
+                'scores': scores_update
+            }, to=sid)
+
+        socketio.emit('leaderboard_update', {
+            'players': get_room_players_list(room_code),
+            'team_rankings': build_tournament_leaderboard_payload(room),
+            'tournament_mode': True,
+            'current_round': 1,
+        }, to=room_code)
+
+        def auto_advance(rc):
+            socketio.sleep(2.0)
+            send_next_question(rc)
+
+        socketio.start_background_task(auto_advance, room_code)
+    except Exception as e:
+        print("Error revealing round 1 answers:", e)
+
 def send_next_question(room_code):
     try:
         with room_lock:
             if room_code not in rooms:
                 return
             room = rooms[room_code]
+
+        if room.get('tournament_mode') and room.get('current_round') == 1:
+            send_next_round1_question(room_code)
+            return
             
         idx = room['current_index']
         if idx >= len(room['questions']):
@@ -1041,16 +1211,19 @@ def on_submit_answer(data):
             return
         room = rooms[room_code]
         p = room['players'].get(sid)
-        if not p or not room['active_question']:
+        is_round1 = room.get('tournament_mode') and room.get('current_round') == 1
+        q = (room.get('active_questions') or {}).get(sid) if is_round1 else room.get('active_question')
+        if not p or not q:
             return
         if sid in room['player_answers_submitted']:
             return
         if room.get('tournament_mode') and sid not in get_active_player_sids(room):
             return
+        if is_round1 and room.get('round1_phase') != 'answer':
+            return
             
         answer_text = data.get('answer', '')
         time_taken = float(data.get('time_taken', 0.0))
-        q = room['active_question']
         
         is_correct = False
         val_clean = answer_text.strip().lower()
@@ -1062,7 +1235,7 @@ def on_submit_answer(data):
                 is_correct = True
                 
         multiplier = DIFFICULTY_CONFIG[room['difficulty']]['score_multiplier']
-        time_limit = get_round_time_limit(room)
+        time_limit = ROUND1_ANSWER_SECONDS if is_round1 else get_round_time_limit(room)
         
         score = 0
         if is_correct:
@@ -1089,7 +1262,7 @@ def on_submit_answer(data):
             'time_taken': time_taken
         }
         
-        if p['user_id']:
+        if p['user_id'] and not getattr(q, 'is_round1_static', False):
             try:
                 ans_log = PlayerAnswer(
                     user_id=p['user_id'],
@@ -1118,7 +1291,10 @@ game_id=room['game_id'],
         if len(active_answered) == len(active_sids) and len(active_sids) > 0:
             if room.get('timer_thread'):
                 room['timer_thread'].cancel()
-            reveal_answers(room_code)
+            if is_round1:
+                reveal_round1_answers(room_code)
+            else:
+                reveal_answers(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi nộp câu trả lời: {str(e)}"})
 

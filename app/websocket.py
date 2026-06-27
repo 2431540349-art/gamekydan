@@ -534,7 +534,7 @@ def on_start_game():
 
         if room.get('tournament_mode', True):
             teams_present = get_teams_with_players(room)
-            if len(teams_present) < 2:
+            if len(teams_present) < 1:
                 emit('error', {'message': 'Giải đấu cần ít nhất 2 đội có người chơi!'})
                 room['started'] = False
                 return

@@ -227,7 +227,6 @@ const resCorrect = document.getElementById('res-correct');
     // State
     let socket;
     let myAvatar = '👤';
-    let myDifficulty = 'medium';
     let myTournamentMode = true;
     let myTeam = null;
     let isReady = false;
@@ -291,15 +290,11 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('settings_updated', (data) => {
-if (!window.GAME_CONFIG.isHost) {
-                document.querySelectorAll('.diff-card').forEach(el => el.classList.remove('selected'));
-                const sel = document.querySelector(`.diff-card[data-diff="${data.difficulty}"]`);
-                if (sel) sel.classList.add('selected');
-                myDifficulty = data.difficulty;
+            if (!window.GAME_CONFIG.isHost) {
                 if (data.tournament_mode !== undefined) {
-                    myTournamentMode = data.tournament_mode;
-                    tournamentMode = data.tournament_mode;
-                    updateModeUI(data.tournament_mode);
+                    myTournamentMode = Boolean(data.tournament_mode);
+                    tournamentMode = myTournamentMode;
+                    updateModeUI(myTournamentMode);
                 }
             }
         });
@@ -353,7 +348,7 @@ if (!window.GAME_CONFIG.isHost) {
             } else if (gameRoundInfo) {
                 gameRoundInfo.classList.add('hidden');
             }
-            // Reset lifelines based on difficulty config
+            // Reset lifelines based on server config
             const lifelines = (data && data.lifelines) ? data.lifelines : [];
             currentLifelines = {
                 fifty_fifty: lifelines.includes('fifty_fifty'),
@@ -363,12 +358,12 @@ if (!window.GAME_CONFIG.isHost) {
             if (!currentLifelines.fifty_fifty) {
                 btn5050.disabled = true;
                 btn5050.style.opacity = '0.3';
-                btn5050.title = 'Không khả dụng ở độ khó này';
+                btn5050.title = 'Không khả dụng';
             }
             if (!currentLifelines.hint) {
                 btnHint.disabled = true;
                 btnHint.style.opacity = '0.3';
-                btnHint.title = 'Không khả dụng ở độ khó này';
+                btnHint.title = 'Không khả dụng';
             }
         });
 
@@ -529,21 +524,8 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             }
         }
 
-        // Difficulty (Host only)
+        // Mode selector (Host only)
         if (window.GAME_CONFIG.isHost) {
-            document.querySelectorAll('.diff-card').forEach(el => {
-                el.addEventListener('click', () => {
-                    SoundEffects.playClick();
-                    document.querySelectorAll('.diff-card').forEach(e => e.classList.remove('selected'));
-                    el.classList.add('selected');
-                    myDifficulty = el.dataset.diff;
-                    socket.emit('update_settings', {
-                        difficulty: myDifficulty,
-                        tournament_mode: myTournamentMode,
-                    });
-                });
-            });
-
             document.querySelectorAll('.mode-card').forEach(el => {
                 el.addEventListener('click', () => {
                     SoundEffects.playClick();
@@ -551,15 +533,11 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
                     tournamentMode = myTournamentMode;
                     updateModeUI(myTournamentMode);
                     socket.emit('update_settings', {
-                        difficulty: myDifficulty,
                         tournament_mode: myTournamentMode,
                     });
                 });
             });
         } else {
-            document.querySelectorAll('.diff-card').forEach(el => {
-                el.style.pointerEvents = 'none';
-            });
             document.querySelectorAll('.mode-card').forEach(el => {
                 el.style.pointerEvents = 'none';
             });

@@ -96,6 +96,7 @@ def _create_game_room(player_name, room_code=FIXED_ROOM_CODE):
         player_name = current_user.username if current_user.is_authenticated else "Người chơi"
 
     with room_lock:
+
         if room_code not in rooms:
             rooms[room_code] = {
                 'host_sid': None,
@@ -110,6 +111,7 @@ def _create_game_room(player_name, room_code=FIXED_ROOM_CODE):
                 'game_id': secrets.token_hex(8),
                 'timer_thread': None
             }
+
 
     session["guest_player_name"] = player_name
     return redirect(url_for("main.game_room", room_id=room_code, host="true", name=player_name))
@@ -173,6 +175,7 @@ def guest_room_route():
             rooms[room_code] = {
                 'host_sid': None,
                 'difficulty': 'medium',
+                'tournament_mode': True,
                 'started': False,
                 'questions': [],
                 'current_index': 0,

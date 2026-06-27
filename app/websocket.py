@@ -43,6 +43,120 @@ DIFFICULTY_CONFIG = {
     }
 }
 
+# Giải đấu 4 vòng: 10 → 5 → 3 → 2 đội (đối kháng chung kết)
+# Thời gian nghỉ giữa vòng: 7–10 phút; thời gian/câu giảm dần ở vòng sâu hơn
+TOURNAMENT_ROUND_CONFIG = {
+    1: {
+        'name': 'Vòng 1 — Loại sơ',
+        'teams_in': 10,
+        'teams_advance': 5,
+        'question_count': 5,
+        'time_per_question': 15,
+        'break_seconds': 480,
+        'description': '10 đội tranh tài, chọn 5 đội đi tiếp',
+    },
+    2: {
+        'name': 'Vòng 2 — Bán kết',
+        'teams_in': 5,
+        'teams_advance': 3,
+        'question_count': 4,
+        'time_per_question': 12,
+        'break_seconds': 420,
+        'description': '5 đội, chọn 3 đội vào chung kết',
+    },
+    3: {
+        'name': 'Vòng 3 — Chung kết',
+        'teams_in': 3,
+        'teams_advance': 2,
+        'question_count': 3,
+        'time_per_question': 10,
+        'break_seconds': 420,
+        'description': '3 đội, chọn 2 đội vào trận đối kháng',
+    },
+    4: {
+        'name': 'Vòng 4 — Đối kháng',
+        'teams_in': 2,
+        'teams_advance': 1,
+        'question_count': 5,
+        'time_per_question': 7,
+        'break_seconds': 0,
+        'description': '2 đội đối đầu trực tiếp, chọn nhà vô địch & MVP',
+        'is_final': True,
+    },
+}
+
+def init_tournament_room_state(room):
+    room['tournament_mode'] = True
+    room['current_round'] = 0
+    room['active_teams'] = set()
+    room['eliminated_teams'] = set()
+    room['round_history'] = []
+    room['in_break'] = False
+    room['break_remaining'] = 0
+
+def get_teams_with_players(room):
+    teams = set()
+    for p in room['players'].values():
+        if p.get('team'):
+            teams.add(p['team'])
+    return teams
+
+def get_active_player_sids(room):
+    if not room.get('tournament_mode'):
+return list(room['players'].keys())
+    active_teams = room.get('active_teams') or set()
+    return [
+        sid for sid, p in room['players'].items()
+        if p.get('team') in active_teams
+    ]
+
+def get_round_time_limit(room):
+    if room.get('tournament_mode') and room.get('current_round'):
+        cfg = TOURNAMENT_ROUND_CONFIG.get(room['current_round'], {})
+        return cfg.get('time_per_question', DIFFICULTY_CONFIG[room['difficulty']]['time_per_question'])
+    return DIFFICULTY_CONFIG[room['difficulty']]['time_per_question']
+
+def get_team_rankings(room, team_ids=None):
+    if team_ids is None:
+        team_ids = room.get('active_teams') or get_teams_with_players(room)
+    teams = {}
+    for sid, p in room['players'].items():
+        team_id = p.get('team')
+        if not team_id or team_id not in team_ids:
+            continue
+        if team_id not in teams:
+            teams[team_id] = {
+                'team': team_id,
+                'name': f'Đội {team_id}',
+                'score': 0,
+                'total_time': 0.0,
+                'members': [],
+            }
+        teams[team_id]['score'] += p['score']
+        teams[team_id]['total_time'] += p.get('total_time', 0.0)
+        teams[team_id]['members'].append({
+            'sid': sid,
+            'name': p['name'],
+            'avatar': p['avatar'],
+            'score': p['score'],
+            'best_streak': p.get('best_streak', 0),
+        })
+    for team in teams.values():
+        team['members'].sort(key=lambda m: m['score'], reverse=True)
+    return sorted(
+        teams.values(),
+        key=lambda t: (-t['score'], t['total_time'], t['team'])
+    )
+
+def build_tournament_leaderboard_payload(room):
+    rankings = get_team_rankings(room)
+    eliminated = sorted(room.get('eliminated_teams') or set())
+    for rank, team in enumerate(rankings, 1):
+        team['rank'] = rank
+        team['eliminated'] = team['team'] in (room.get('eliminated_teams') or set())
+        team['active'] = team['team'] in (room.get('active_teams') or set())
+    return rankings
+
 def get_room_by_sid(sid):
     with room_lock:
         for code, room in rooms.items():
@@ -69,7 +183,15 @@ def get_room_players_list(room_code):
             'streak': p['streak'],
             'ready': p['is_ready'],
             'is_host': (room['host_sid'] == sid),
-            'badges': badges_list
+            'badges': badges_list,
+            'is_active': (
+                not room.get('tournament_mode')
+or p.get('team') in (room.get('active_teams') or set())
+            ),
+            'is_eliminated': (
+                room.get('tournament_mode')
+                and p.get('team') in (room.get('eliminated_teams') or set())
+            ),
         })
     return res
 
@@ -154,7 +276,7 @@ def on_create_room(data):
             user_db_id = current_user.id
             name = current_user.username
             current_user.avatar = avatar
-            current_user.difficulty = difficulty
+current_user.difficulty = difficulty
             db_session.merge(current_user)
             db_session.commit()
             
@@ -162,6 +284,7 @@ def on_create_room(data):
             rooms[room_code] = {
                 'host_sid': request.sid,
                 'difficulty': difficulty,
+                'tournament_mode': True,
                 'started': False,
                 'questions': [],
                 'current_index': 0,
@@ -246,7 +369,7 @@ def on_join_room(data):
 
             room['players'][request.sid] = {
                 'user_id': user_db_id,
-                'name': name,
+'name': name,
                 'avatar': avatar,
                 'team': assigned_team,
                 'score': 0,
@@ -363,14 +486,20 @@ def on_update_settings(data):
         room_code = get_room_by_sid(sid)
         if not room_code:
             return
-        difficulty = data.get('difficulty')
-        if difficulty in ['easy', 'medium', 'hard']:
-            with room_lock:
-                room = rooms[room_code]
-                if room['host_sid'] == sid:
-                    room['difficulty'] = difficulty
-            socketio.emit('settings_updated', {'difficulty': difficulty}, to=room_code)
-            emit_room_state(room_code)
+        with room_lock:
+            room = rooms[room_code]
+            if room['host_sid'] != sid:
+                return
+            difficulty = data.get('difficulty')
+            if difficulty in ['easy', 'medium', 'hard']:
+                room['difficulty'] = difficulty
+            if 'tournament_mode' in data:
+                room['tournament_mode'] = bool(data.get('tournament_mode'))
+        payload = {'difficulty': room['difficulty']}
+        if 'tournament_mode' in data:
+            payload['tournament_mode'] = room.get('tournament_mode', False)
+        socketio.emit('settings_updated', payload, to=room_code)
+        emit_room_state(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi cập nhật thiết lập: {str(e)}"})
 
@@ -394,30 +523,109 @@ def on_start_game():
         if any(not p.get('is_ready') for p in room['players'].values()):
             emit('error', {'message': 'Tất cả người chơi cần sẵn sàng trước khi bắt đầu!'})
             return
-            
-        diff = room['difficulty']
-        q_count = DIFFICULTY_CONFIG[diff]['question_count']
-        
-        all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
-        if len(all_qs) < q_count:
-            all_qs += db_session.query(Question).filter(Question.difficulty != diff).all()
-            
-        random.shuffle(all_qs)
-        room['questions'] = all_qs[:q_count]
-        room['current_index'] = 0
+
         room['started'] = True
         room['game_id'] = secrets.token_hex(8)
-        
-        socketio.emit('game_started', {
-            'question_count': q_count,
-            'difficulty': diff,
-            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines']
-        }, to=room_code)
-        
-        socketio.sleep(1.5)
-        send_next_question(room_code)
+
+        if room.get('tournament_mode', True):
+            teams_present = get_teams_with_players(room)
+            if len(teams_present) < 2:
+                emit('error', {'message': 'Giải đấu cần ít nhất 2 đội có người chơi!'})
+                room['started'] = False
+                return
+            init_tournament_room_state(room)
+            room['active_teams'] = teams_present
+            start_tournament_round(room_code, 1)
+        else:
+            diff = room['difficulty']
+            q_count = DIFFICULTY_CONFIG[diff]['question_count']
+all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
+            if len(all_qs) < q_count:
+                all_qs += db_session.query(Question).filter(Question.difficulty != diff).all()
+
+            random.shuffle(all_qs)
+            room['questions'] = all_qs[:q_count]
+            room['current_index'] = 0
+
+            socketio.emit('game_started', {
+                'question_count': q_count,
+                'difficulty': diff,
+                'lifelines': DIFFICULTY_CONFIG[diff]['lifelines'],
+                'tournament_mode': False,
+            }, to=room_code)
+
+            socketio.sleep(1.5)
+            send_next_question(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi khởi động game: {str(e)}"})
+
+def load_round_questions(room, round_num):
+    cfg = TOURNAMENT_ROUND_CONFIG[round_num]
+    diff = room['difficulty']
+    q_count = cfg['question_count']
+    used_ids = set(room.get('used_question_ids') or [])
+
+    all_qs = db_session.query(Question).filter_by(difficulty=diff).all()
+    if len(all_qs) < q_count:
+        all_qs += db_session.query(Question).filter(Question.difficulty != diff).all()
+
+    available = [q for q in all_qs if q.id not in used_ids]
+    if len(available) < q_count:
+        available = list(all_qs)
+
+    random.shuffle(available)
+    selected = available[:q_count]
+    if 'used_question_ids' not in room:
+        room['used_question_ids'] = []
+    room['used_question_ids'].extend(q.id for q in selected)
+    room['questions'] = selected
+    room['current_index'] = 0
+
+def start_tournament_round(room_code, round_num):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+
+        cfg = TOURNAMENT_ROUND_CONFIG[round_num]
+        room['current_round'] = round_num
+        room['in_break'] = False
+        load_round_questions(room, round_num)
+
+        for p in room['players'].values():
+            p['used_lifelines'] = {'fifty_fifty': False, 'hint': False}
+            p['used_lifeline_on_this'] = False
+
+        diff = room['difficulty']
+        socketio.emit('round_started', {
+            'round': round_num,
+            'round_name': cfg['name'],
+            'round_description': cfg['description'],
+            'question_count': cfg['question_count'],
+            'time_per_question': cfg['time_per_question'],
+            'teams_active': sorted(room['active_teams']),
+            'teams_eliminated': sorted(room.get('eliminated_teams') or set()),
+            'difficulty': diff,
+            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines'],
+            'tournament_mode': True,
+            'total_rounds': 4,
+            'team_rankings': build_tournament_leaderboard_payload(room),
+        }, to=room_code)
+
+        socketio.emit('game_started', {
+            'question_count': cfg['question_count'],
+            'difficulty': diff,
+            'lifelines': DIFFICULTY_CONFIG[diff]['lifelines'],
+'tournament_mode': True,
+            'round': round_num,
+            'round_name': cfg['name'],
+        }, to=room_code)
+
+        socketio.sleep(2.0)
+        send_next_question(room_code)
+    except Exception as e:
+        socketio.emit('error', {'message': f"Lỗi bắt đầu vòng đấu: {str(e)}"}, to=room_code)
 
 def send_next_question(room_code):
     try:
@@ -428,7 +636,10 @@ def send_next_question(room_code):
             
         idx = room['current_index']
         if idx >= len(room['questions']):
-            end_game(room_code)
+            if room.get('tournament_mode'):
+                end_tournament_round(room_code)
+            else:
+                end_game(room_code)
             return
             
         q = room['questions'][idx]
@@ -443,14 +654,19 @@ def send_next_question(room_code):
         # Build payload matching frontend expectations
         q_dict = {
             'id': q.id,
-            'question': q.content,          # frontend uses data.question
-            'options': [q.option_a, q.option_b, q.option_c, q.option_d],  # frontend uses data.options
-            'article': q.article_name,       # frontend uses data.article
+            'question': q.content,
+            'options': [q.option_a, q.option_b, q.option_c, q.option_d],
+            'article': q.article_name,
             'article_name': q.article_name,
             'difficulty': q.difficulty,
-            'current_q': room['current_index'],   # frontend uses data.current_q
-            'total_q': len(room['questions']),     # frontend uses data.total_q
+            'current_q': room['current_index'],
+            'total_q': len(room['questions']),
         }
+        if room.get('tournament_mode'):
+            cfg = TOURNAMENT_ROUND_CONFIG.get(room['current_round'], {})
+            q_dict['round'] = room['current_round']
+            q_dict['round_name'] = cfg.get('name', '')
+            q_dict['time_per_question'] = cfg.get('time_per_question', 20)
         
         socketio.emit('new_question', q_dict, to=room_code)
         
@@ -458,12 +674,12 @@ def send_next_question(room_code):
         
         def run_timer(rc, q_idx):
             try:
-                # We need to read difficulty and look up limit inside loop safely
                 with room_lock:
                     if rc not in rooms:
                         return
-                    limit = DIFFICULTY_CONFIG[rooms[rc]['difficulty']]['time_per_question']
-                
+                    rm = rooms[rc]
+                    limit = get_round_time_limit(rm)
+
                 for t in range(limit, -1, -1):
                     with room_lock:
                         if rc not in rooms:
@@ -483,7 +699,7 @@ def send_next_question(room_code):
                 
         socketio.start_background_task(run_timer, room_code, room['current_index'])
     except Exception as e:
-        socketio.emit('error', {'message': f"Lỗi chuyển câu hỏi: {str(e)}"}, to=room_code)
+socketio.emit('error', {'message': f"Lỗi chuyển câu hỏi: {str(e)}"}, to=room_code)
 
 def handle_question_timeout(room_code):
     try:
@@ -494,8 +710,12 @@ def handle_question_timeout(room_code):
             if not room['active_question']:
                 return
                 
-        limit = DIFFICULTY_CONFIG[room['difficulty']]['time_per_question']
-        for sid, p in room['players'].items():
+        limit = get_round_time_limit(room)
+        active_sids = get_active_player_sids(room)
+        for sid in active_sids:
+            p = room['players'].get(sid)
+            if not p:
+                continue
             if sid not in room['player_answers_submitted']:
                 if p['user_id']:
                     try:
@@ -553,7 +773,10 @@ def reveal_answers(room_code):
         }, to=room_code)
         
         socketio.emit('leaderboard_update', {
-            'players': get_room_players_list(room_code)
+            'players': get_room_players_list(room_code),
+            'team_rankings': build_tournament_leaderboard_payload(room) if room.get('tournament_mode') else None,
+'tournament_mode': room.get('tournament_mode', False),
+            'current_round': room.get('current_round', 0),
         }, to=room_code)
         
         def auto_advance(rc):
@@ -579,6 +802,174 @@ def on_request_next():
         send_next_question(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi chuyển câu tiếp: {str(e)}"})
+
+def end_tournament_round(room_code):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+
+        round_num = room['current_round']
+        cfg = TOURNAMENT_ROUND_CONFIG[round_num]
+        rankings = get_team_rankings(room, room['active_teams'])
+        advance_count = min(cfg['teams_advance'], len(rankings))
+        advancing = [t['team'] for t in rankings[:advance_count]]
+        eliminated_this_round = [t['team'] for t in rankings[advance_count:]]
+
+        round_result = {
+            'round': round_num,
+            'round_name': cfg['name'],
+            'rankings': rankings,
+            'advancing_teams': advancing,
+            'eliminated_teams': eliminated_this_round,
+        }
+        room['round_history'].append(round_result)
+
+        is_final = cfg.get('is_final', False)
+
+        socketio.emit('round_end', {
+            'round': round_num,
+            'round_name': cfg['name'],
+            'rankings': rankings,
+            'advancing_teams': advancing,
+            'eliminated_teams': eliminated_this_round,
+            'is_final': is_final,
+            'next_round': round_num + 1 if not is_final else None,
+            'break_seconds': cfg['break_seconds'] if not is_final else 0,
+        }, to=room_code)
+
+        if is_final:
+            end_tournament(room_code, rankings)
+        else:
+            room['eliminated_teams'].update(eliminated_this_round)
+            room['active_teams'] = set(advancing)
+            start_round_break(room_code, round_num, cfg['break_seconds'])
+    except Exception as e:
+        print("Error ending tournament round:", e)
+
+def start_round_break(room_code, completed_round, break_seconds):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+
+        room['in_break'] = True
+        room['break_remaining'] = break_seconds
+        next_round = completed_round + 1
+        next_cfg = TOURNAMENT_ROUND_CONFIG.get(next_round, {})
+
+        socketio.emit('round_break', {
+'completed_round': completed_round,
+            'next_round': next_round,
+            'next_round_name': next_cfg.get('name', ''),
+            'next_round_description': next_cfg.get('description', ''),
+            'break_seconds': break_seconds,
+            'team_rankings': build_tournament_leaderboard_payload(room),
+            'active_teams': sorted(room['active_teams']),
+            'eliminated_teams': sorted(room['eliminated_teams']),
+        }, to=room_code)
+
+        def break_countdown(rc, total_seconds):
+            try:
+                for remaining in range(total_seconds, -1, -1):
+                    with room_lock:
+                        if rc not in rooms:
+                            return
+                        rm = rooms[rc]
+                        if not rm.get('in_break'):
+                            return
+                        rm['break_remaining'] = remaining
+
+                    socketio.emit('break_tick', {
+                        'remaining': remaining,
+                        'next_round': next_round,
+                    }, to=rc)
+
+                    if remaining == 0:
+                        with room_lock:
+                            if rc not in rooms:
+                                return
+                            rooms[rc]['in_break'] = False
+                        start_tournament_round(rc, next_round)
+                        break
+                    socketio.sleep(1.0)
+            except Exception as ex:
+                print("Error in break countdown:", ex)
+
+        socketio.start_background_task(break_countdown, room_code, break_seconds)
+    except Exception as e:
+        print("Error starting round break:", e)
+
+def end_tournament(room_code, final_rankings):
+    try:
+        with room_lock:
+            if room_code not in rooms:
+                return
+            room = rooms[room_code]
+            room['started'] = False
+            room['in_break'] = False
+
+        if not final_rankings:
+            final_rankings = get_team_rankings(room)
+
+        winner = final_rankings[0] if final_rankings else None
+        runner_up = final_rankings[1] if len(final_rankings) > 1 else None
+
+        mvp = None
+        if winner:
+            mvp = max(winner['members'], key=lambda m: m['score']) if winner['members'] else None
+
+        sorted_players = sorted(room['players'].items(), key=lambda x: x[1]['score'], reverse=True)
+        badges_unlocked_all = {}
+
+        for rank, (sid, p) in enumerate(sorted_players, 1):
+            if p['user_id']:
+                user = db_session.query(User).filter_by(id=p['user_id']).first()
+                if user:
+                    user.total_games += 1
+                    user.total_score += p['score']
+                    user.total_tries += (p['wrong_answers'] + len(p['articles_correct']))
+                    user.right_tries += len(p['articles_correct'])
+                    if p['best_streak'] > user.best_streak:
+user.best_streak = p['best_streak']
+
+                    db_session.merge(user)
+                    db_session.commit()
+
+                    is_winner = winner and p.get('team') == winner['team']
+                    game_result = {
+                        'max_streak': p['best_streak'],
+                        'articles_correct': list(p['articles_correct']),
+                        'final_rank': 1 if is_winner else rank,
+                        'total_time': p['total_time'],
+                        'wrong_answers': p['wrong_answers']
+                    }
+                    new_badges = check_and_award_badges(p['user_id'], game_result)
+                    if new_badges:
+                        badges_unlocked_all[sid] = new_badges
+
+        socketio.emit('tournament_over', {
+            'final_rankings': final_rankings,
+            'winner': winner,
+            'runner_up': runner_up,
+            'mvp': mvp,
+            'round_history': room.get('round_history', []),
+            'final_scores': [{
+                'sid': sid,
+                'name': p['name'],
+                'avatar': p['avatar'],
+                'team': p.get('team'),
+                'score': p['score'],
+                'best_streak': p['best_streak'],
+                'wrong_answers': p['wrong_answers'],
+                'total_time': p['total_time']
+            } for sid, p in sorted_players],
+            'badges_earned': badges_unlocked_all,
+        }, to=room_code)
+    except Exception as e:
+        print("Error ending tournament:", e)
 
 def end_game(room_code):
     try:
@@ -612,7 +1003,7 @@ def end_game(room_code):
                         'total_time': p['total_time'],
                         'wrong_answers': p['wrong_answers']
                     }
-                    new_badges = check_and_award_badges(p['user_id'], game_result)
+new_badges = check_and_award_badges(p['user_id'], game_result)
                     if new_badges:
                         badges_unlocked_all[sid] = new_badges
                         
@@ -645,6 +1036,8 @@ def on_submit_answer(data):
             return
         if sid in room['player_answers_submitted']:
             return
+        if room.get('tournament_mode') and sid not in get_active_player_sids(room):
+            return
             
         answer_text = data.get('answer', '')
         time_taken = float(data.get('time_taken', 0.0))
@@ -660,7 +1053,7 @@ def on_submit_answer(data):
                 is_correct = True
                 
         multiplier = DIFFICULTY_CONFIG[room['difficulty']]['score_multiplier']
-        time_limit = DIFFICULTY_CONFIG[room['difficulty']]['time_per_question']
+        time_limit = get_round_time_limit(room)
         
         score = 0
         if is_correct:
@@ -691,7 +1084,7 @@ def on_submit_answer(data):
             try:
                 ans_log = PlayerAnswer(
                     user_id=p['user_id'],
-                    game_id=room['game_id'],
+game_id=room['game_id'],
                     question_id=q.id,
                     article_id=q.article_id,
                     is_correct=is_correct,
@@ -711,7 +1104,9 @@ def on_submit_answer(data):
             'article_name': q.article_name
         })
         
-        if len(room['player_answers_submitted']) == len(room['players']):
+        active_sids = get_active_player_sids(room)
+        active_answered = [s for s in active_sids if s in room['player_answers_submitted']]
+        if len(active_answered) == len(active_sids) and len(active_sids) > 0:
             if room.get('timer_thread'):
                 room['timer_thread'].cancel()
             reveal_answers(room_code)
@@ -729,7 +1124,9 @@ def on_use_lifeline(data):
         p = room['players'].get(sid)
         if not p or not room['active_question']:
             return
-            
+        if room.get('tournament_mode') and sid not in get_active_player_sids(room):
+            return
+
         lifeline_type = data.get('type')
         if not lifeline_type or p['used_lifelines'].get(lifeline_type):
             return
@@ -755,6 +1152,28 @@ def on_use_lifeline(data):
             })
     except Exception as e:
         emit('error', {'message': f"Lỗi dùng lifeline: {str(e)}"})
+
+@socketio.on('skip_break')
+def on_skip_break():
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        with room_lock:
+            room = rooms[room_code]
+            if room['host_sid'] != sid:
+                emit('error', {'message': 'Chỉ trưởng phòng mới có thể bỏ qua thời gian nghỉ!'})
+                return
+            if not room.get('in_break'):
+                return
+next_round = room['current_round'] + 1
+            room['in_break'] = False
+            room['break_remaining'] = 0
+        if next_round <= 4:
+            start_tournament_round(room_code, next_round)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi bỏ qua thời gian nghỉ: {str(e)}"})
 
 @socketio.on('leave_room')
 def on_leave_room():

@@ -125,7 +125,7 @@ body::before {
 .nav-links a, .nav-links button {
     text-decoration: none;
     color: var(--text-secondary);
-    font-weight: 500;
+font-weight: 500;
     font-size: 0.875rem;
     padding: 0.5rem 1rem;
     border-radius: var(--radius-sm);
@@ -269,7 +269,7 @@ body::before {
 }
 
 .btn-outline {
-    background: transparent;
+background: transparent;
     color: var(--primary);
     border: 2px solid var(--primary);
 }
@@ -419,7 +419,7 @@ body::before {
     border-radius: 999px;
     font-size: 0.8rem;
     font-weight: 600;
-    margin-bottom: 1.5rem;
+margin-bottom: 1.5rem;
 }
 
 .hero-actions {
@@ -724,7 +724,6 @@ body::before {
     color: var(--text-secondary);
     font-weight: 600;
 }
-
 .game-layout {
     display: grid;
     grid-template-columns: 1fr 280px;
@@ -874,7 +873,7 @@ body::before {
     font-weight: 600;
     text-align: left;
     box-shadow: var(--shadow-sm);
-    transition: all 0.2s;
+transition: all 0.2s;
 }
 
 .solo-answer-btn:hover {
@@ -1012,7 +1011,7 @@ body::before {
 
 .explanation-popup.correct {
     background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-    border: 1px solid rgba(16,185,129,0.3);
+border: 1px solid rgba(16,185,129,0.3);
     color: #065f46;
 }
 
@@ -1152,7 +1151,7 @@ body::before {
     text-align: center;
     box-shadow: var(--shadow-xl);
     animation: badge-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    max-width: 400px;
+max-width: 400px;
     width: calc(100% - 2rem);
 }
 
@@ -1290,7 +1289,7 @@ body::before {
 }
 
 .badge-item.unearned {
-    opacity: 0.4;
+opacity: 0.4;
     filter: grayscale(1);
 }
 
@@ -1394,7 +1393,7 @@ body.cyber-auth::after {
     pointer-events: none;
     background:
         radial-gradient(ellipse at 18% 45%, transparent 0 11%, rgba(67, 214, 198, 0.06) 11.3% 11.7%, transparent 12% 18%, rgba(67, 214, 198, 0.05) 18.2% 18.6%, transparent 19%),
-        linear-gradient(124deg, transparent 0 18%, rgba(67, 214, 198, 0.13) 18.2% 18.7%, transparent 19% 62%, rgba(243, 170, 55, 0.12) 62.2% 62.7%, transparent 63%),
+linear-gradient(124deg, transparent 0 18%, rgba(67, 214, 198, 0.13) 18.2% 18.7%, transparent 19% 62%, rgba(243, 170, 55, 0.12) 62.2% 62.7%, transparent 63%),
         radial-gradient(circle at 88% 44%, rgba(67, 214, 198, 0.1), transparent 18%);
     filter: saturate(1.2);
 }
@@ -1523,7 +1522,7 @@ body.cyber-auth .trust-meter strong {
 
 body.cyber-auth .hud-chip,
 body.cyber-auth .hud-control {
-    padding: 0 0.75rem;
+padding: 0 0.75rem;
     color: var(--cyber-amber);
 }
 
@@ -1664,7 +1663,7 @@ body.cyber-auth .input-group label {
 body.cyber-auth .input-field {
     height: 36px;
     border: 1px solid rgba(90, 111, 151, 0.44);
-    border-radius: 5px;
+border-radius: 5px;
     background: rgba(32, 47, 75, 0.84);
     color: #d9e2ef;
     font-family: inherit;
@@ -1787,7 +1786,7 @@ body.cyber-auth .btn-primary:hover {
     display: grid;
     grid-template-columns: 1fr 1fr;
     margin-bottom: 2rem;
-    text-align: center;
+text-align: center;
 }
 
 .signal-stats strong {
@@ -1917,7 +1916,7 @@ body.cyber-auth .btn-primary:hover {
 
 body {
     background:
-        linear-gradient(135deg, rgba(15,98,254,0.05), rgba(20,184,166,0.07)),
+linear-gradient(135deg, rgba(15,98,254,0.05), rgba(20,184,166,0.07)),
         var(--surface);
 }
 
@@ -2051,7 +2050,7 @@ body.cyber-auth {
     --cyber-bg: #f6f9ff;
     --cyber-panel: rgba(255,255,255,0.92);
     --cyber-panel-dark: rgba(248,251,255,0.94);
-    --cyber-line: rgba(15,98,254,0.16);
+--cyber-line: rgba(15,98,254,0.16);
     --cyber-muted: #64748b;
     --cyber-text: #0f172a;
     --cyber-amber: #f59e0b;
@@ -2151,9 +2150,15 @@ body.cyber-auth .trust-meter strong {
 }
 
 .auth-tabs a {
+<<<<<<< HEAD
     background: rgba(249,250,251,0.92);
     border-color: rgba(20,184,166,0.24);
     color: #475569;
+=======
+    background: rgba(248,251,255,0.9);
+    border-color: rgba(15,98,254,0.16);
+color: var(--text-secondary);
+>>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
 }
 
 .auth-tabs a.active {
@@ -2296,7 +2301,7 @@ body.cyber-auth .btn-primary:hover {
     padding: 1rem;
     border: 1px solid rgba(15,98,254,0.12);
     border-radius: var(--radius-md);
-    background: rgba(255,255,255,0.72);
+background: rgba(255,255,255,0.72);
 }
 
 .security-footer strong {
@@ -2462,7 +2467,6 @@ body.cyber-auth .btn-primary:hover {
     font-size: 0.78rem;
     line-height: 1.35;
 }
-
 .player-team-badge {
     flex-shrink: 0;
     padding: 0.18rem 0.5rem;
@@ -2604,7 +2608,7 @@ body::before {
 }
 
 .input-field:focus {
-    border-color: #14b8a6;
+border-color: #14b8a6;
     box-shadow: 0 0 0 3px rgba(20,184,166,0.16);
 }
 
@@ -2780,7 +2784,7 @@ body::before {
 
 .guest-entry-card h1,
 .cyber-card-title h1 {
-    font-size: clamp(1.35rem, 6vw, 2rem);
+font-size: clamp(1.35rem, 6vw, 2rem);
     letter-spacing: 0.18em;
 }
 
@@ -2978,7 +2982,7 @@ body::before {
 
     .security-footer span {
         font-size: 0.68rem;
-        line-height: 1.25;
+line-height: 1.25;
     }
 
     .guest-entry,
@@ -3151,7 +3155,13 @@ body.compact-mobile .home-hero {
     padding-bottom: 0.9rem;
 }
 
+<<<<<<< HEAD
 
+=======
+body.compact-mobile .home-hero + .security-footer {
+    display: none;
+}
+>>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
 body.compact-mobile .home-hero .hero-actions {
     gap: 0.75rem;
 }
@@ -3197,6 +3207,7 @@ body.compact-mobile .navbar {
     padding: 0 0.8rem;
 }
 
+<<<<<<< HEAD
 /* === AUTH BRIGHT CYBER OVERRIDES === */
 body.cyber-auth {
     background: linear-gradient(180deg, #f7fbff 0%, #ecf8ff 45%, #f3fbff 100%);
@@ -3330,3 +3341,255 @@ body.cyber-auth .radar {
 body.cyber-auth .radar-sweep {
     background: conic-gradient(from 220deg, rgba(15,98,254,0.28), transparent 52deg);
 }
+=======
+/* ===== TOURNAMENT MODE ===== */
+.game-mode-section {
+    margin-top: 1rem;
+}
+
+.mode-toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.mode-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: inherit;
+}
+
+.mode-card.selected {
+    border-color: var(--accent);
+    background: rgba(251, 191, 36, 0.08);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.mode-card .mode-emoji { font-size: 1.5rem; margin-bottom: 0.25rem; }
+.mode-card .mode-name { font-weight: 700; font-size: 0.85rem; }
+.mode-card .mode-info { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+.game-round-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    min-width: 140px;
+}
+
+.round-badge {
+    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+}
+
+.round-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.team-score-item.team-eliminated {
+    opacity: 0.45;
+    text-decoration: line-through;
+}
+
+.team-score-item.team-inactive {
+    opacity: 0.6;
+}
+
+.spectator-notice {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem 1rem;
+    font-style: italic;
+}
+
+/* Round break screen */
+.break-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+.break-card {
+    padding: 2rem;
+}
+
+.break-subtitle {
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.break-countdown {
+    text-align: center;
+    margin: 1.5rem 0 2rem;
+    padding: 1.5rem;
+    background: rgba(26, 86, 219, 0.08);
+    border-radius: 16px;
+    border: 1px solid rgba(26, 86, 219, 0.2);
+}
+
+.break-countdown-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.break-countdown-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--primary);
+font-variant-numeric: tabular-nums;
+}
+
+.break-section {
+    margin-bottom: 1.5rem;
+}
+
+.break-section h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.break-rankings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.break-rank-item {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.break-rank-item.eliminated {
+    opacity: 0.55;
+}
+
+.break-rank-no {
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.break-rank-score {
+    font-weight: 700;
+}
+
+.break-rank-status {
+    font-size: 0.8rem;
+}
+
+.break-advancing,
+.break-eliminated {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.team-chip {
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.team-chip.advancing {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.team-chip.eliminated {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.break-empty {
+    color: var(--text-muted);
+}
+
+/* Tournament winner banner */
+.tournament-winner-banner {
+    text-align: center;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(26, 86, 219, 0.1));
+    border-radius: 20px;
+    border: 2px solid var(--accent);
+}
+
+.winner-crown {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.tournament-winner-banner h2 {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.winner-label {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 0.25rem 0 1rem;
+}
+
+.mvp-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.mvp-badge {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.mvp-score {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+    .break-rank-item {
+        grid-template-columns: 30px 1fr;
+        grid-template-rows: auto auto;
+    }
+    .break-rank-score,
+    .break-rank-status {
+        grid-column: 2;
+    }
+    .break-countdown-value {
+        font-size: 2.25rem;
+    }
+    .mode-toggle-grid {
+        grid-template-columns: 1fr;
+    }
+}
+>>>>>>> fb8b8d7 (Lưu thay đổi của tôi)

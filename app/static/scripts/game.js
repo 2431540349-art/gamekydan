@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const gain = this.ctx.createGain();
                 osc.type = 'triangle';
                 osc.connect(gain);
-                gain.connect(this.ctx.destination);
+gain.connect(this.ctx.destination);
                 osc.frequency.setValueAtTime(440, now);
                 osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.4); // B5
                 gain.gain.setValueAtTime(0.1, now);
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         loop() {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            let active = false;
+let active = false;
             this.particles.forEach(p => {
                 if (p.alpha > 0) {
                     active = true;
@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Basic UI Elements
     const screenLobby = document.getElementById('screen-lobby');
     const screenGame = document.getElementById('screen-game');
+    const screenBreak = document.getElementById('screen-break');
     const screenResults = document.getElementById('screen-results');
     
     const lobbyPlayers = document.getElementById('lobby-players');
@@ -188,6 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameTimer = document.getElementById('game-timer');
     const gameProgress = document.getElementById('game-progress');
     const gameLeaderboard = document.getElementById('game-leaderboard');
+    const gameRoundInfo = document.getElementById('game-round-info');
+    const roundBadge = document.getElementById('round-badge');
+    const roundDesc = document.getElementById('round-desc');
     const streakDisplay = document.getElementById('streak-display');
     const streakCount = document.getElementById('streak-count');
     const btn5050 = document.getElementById('btn-5050');
@@ -204,18 +208,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Results
     const podium = document.getElementById('results-podium');
     const resScore = document.getElementById('res-score');
-    const resCorrect = document.getElementById('res-correct');
+const resCorrect = document.getElementById('res-correct');
     const resStreak = document.getElementById('res-streak');
     const btnPlayAgain = document.getElementById('btn-play-again');
+    const btnSkipBreak = document.getElementById('btn-skip-break');
+    const breakCountdown = document.getElementById('break-countdown');
+    const breakRankings = document.getElementById('break-rankings');
+    const breakAdvancing = document.getElementById('break-advancing');
+    const breakEliminated = document.getElementById('break-eliminated');
+    const breakTitle = document.getElementById('break-title');
+    const breakSubtitle = document.getElementById('break-subtitle');
+    const tournamentWinnerBanner = document.getElementById('tournament-winner-banner');
+    const winnerTeamName = document.getElementById('winner-team-name');
+    const mvpPlayerName = document.getElementById('mvp-player-name');
+    const mvpPlayerScore = document.getElementById('mvp-player-score');
+    const resultsTitle = document.getElementById('results-title');
 
     // State
     let socket;
     let myAvatar = '👤';
     let myDifficulty = 'medium';
+    let myTournamentMode = true;
     let myTeam = null;
     let isReady = false;
     let hasAnswered = false;
     let currentLifelines = { fifty_fifty: true, hint: true };
+    let tournamentMode = true;
+    let currentRound = 0;
+    let currentTimeLimit = 20;
+    let isEliminated = false;
+
+    const TOURNAMENT_ROUNDS = {
+        1: { name: 'Vòng 1 — Loại sơ' },
+        2: { name: 'Vòng 2 — Bán kết' },
+        3: { name: 'Vòng 3 — Chung kết' },
+        4: { name: 'Vòng 4 — Đối kháng' },
+    };
 
     const teamLocked = Boolean(window.GAME_CONFIG.playerTeam);
 
@@ -263,24 +291,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         socket.on('settings_updated', (data) => {
-            if (!window.GAME_CONFIG.isHost) {
-                // Update UI to reflect host's difficulty choice
+if (!window.GAME_CONFIG.isHost) {
                 document.querySelectorAll('.diff-card').forEach(el => el.classList.remove('selected'));
                 const sel = document.querySelector(`.diff-card[data-diff="${data.difficulty}"]`);
-                if(sel) sel.classList.add('selected');
+                if (sel) sel.classList.add('selected');
                 myDifficulty = data.difficulty;
+                if (data.tournament_mode !== undefined) {
+                    myTournamentMode = data.tournament_mode;
+                    tournamentMode = data.tournament_mode;
+                    updateModeUI(data.tournament_mode);
+                }
             }
+        });
+
+        socket.on('round_started', (data) => {
+            tournamentMode = true;
+            currentRound = data.round;
+            currentTimeLimit = data.time_per_question || 20;
+            isEliminated = myTeam ? !(data.teams_active || []).includes(myTeam) : false;
+            updateRoundUI(data);
+            if (isEliminated) {
+                showToast('Đội của bạn đã bị loại. Bạn có thể theo dõi các vòng tiếp theo.', 'info');
+            }
+        });
+
+        socket.on('round_end', (data) => {
+            if (data.is_final) return;
+            showRoundBreakSummary(data);
+        });
+
+        socket.on('round_break', (data) => {
+            showScreen('break');
+            breakTitle.textContent = `Kết quả ${TOURNAMENT_ROUNDS[data.completed_round]?.name || 'vòng ' + data.completed_round}`;
+            breakSubtitle.textContent = data.next_round_description || '';
+            updateBreakCountdown(data.break_seconds);
+            renderBreakRankings(data.team_rankings || []);
+            renderBreakTeams(data.active_teams || [], breakAdvancing, 'advancing');
+            renderBreakTeams(data.eliminated_teams || [], breakEliminated, 'eliminated');
+            if (window.GAME_CONFIG.isHost && btnSkipBreak) {
+                btnSkipBreak.classList.remove('hidden');
+            }
+        });
+
+        socket.on('break_tick', (data) => {
+            updateBreakCountdown(data.remaining);
+        });
+
+        socket.on('tournament_over', (data) => {
+            displayTournamentResults(data);
+            Confetti.burst();
+            setTimeout(() => Confetti.burst(), 500);
+            setTimeout(() => Confetti.burst(), 1000);
         });
 
         socket.on('game_started', (data) => {
             showScreen('game');
+            tournamentMode = Boolean(data.tournament_mode);
+            if (data.round) {
+                currentRound = data.round;
+                updateRoundUI(data);
+            } else if (gameRoundInfo) {
+                gameRoundInfo.classList.add('hidden');
+            }
             // Reset lifelines based on difficulty config
             const lifelines = (data && data.lifelines) ? data.lifelines : [];
             currentLifelines = {
                 fifty_fifty: lifelines.includes('fifty_fifty'),
                 hint: lifelines.includes('hint')
             };
-            // Update lifeline button states
+// Update lifeline button states
             if (!currentLifelines.fifty_fifty) {
                 btn5050.disabled = true;
                 btn5050.style.opacity = '0.3';
@@ -358,8 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 streakDisplay.classList.add('streak-wrong');
             }
             streakCount.textContent = data.streak;
-            
-            if (data.new_badges && data.new_badges.length > 0) {
+if (data.new_badges && data.new_badges.length > 0) {
                 showBadgeUnlock(data.new_badges[0]);
             }
         });
@@ -392,11 +470,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.on('leaderboard_update', (data) => {
             if (data.players) {
-                updateLeaderboard(data.players);
+                updateLeaderboard(data.players, data.team_rankings);
             }
         });
 
         socket.on('game_over', (data) => {
+            if (tournamentMode) return;
             // final_scores is a sorted list from server
             const leaderboard = data.final_scores || [];
             // find my own entry
@@ -429,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = `<div class="avatar-emoji">${emoji}</div>`;
             el.addEventListener('click', () => {
                 SoundEffects.playClick();
-                document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
+document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
                 el.classList.add('selected');
                 myAvatar = emoji;
                 if(socket && socket.connected) {
@@ -458,12 +537,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelectorAll('.diff-card').forEach(e => e.classList.remove('selected'));
                     el.classList.add('selected');
                     myDifficulty = el.dataset.diff;
-                    socket.emit('update_settings', { difficulty: myDifficulty });
+                    socket.emit('update_settings', {
+                        difficulty: myDifficulty,
+                        tournament_mode: myTournamentMode,
+                    });
+                });
+            });
+
+            document.querySelectorAll('.mode-card').forEach(el => {
+                el.addEventListener('click', () => {
+                    SoundEffects.playClick();
+                    myTournamentMode = el.dataset.mode === 'tournament';
+                    tournamentMode = myTournamentMode;
+                    updateModeUI(myTournamentMode);
+                    socket.emit('update_settings', {
+                        difficulty: myDifficulty,
+                        tournament_mode: myTournamentMode,
+                    });
                 });
             });
         } else {
-            // Disable clicks for non-host
             document.querySelectorAll('.diff-card').forEach(el => {
+                el.style.pointerEvents = 'none';
+            });
+            document.querySelectorAll('.mode-card').forEach(el => {
                 el.style.pointerEvents = 'none';
             });
         }
@@ -496,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!card || card.classList.contains('full') || teamLocked) return;
 
                 SoundEffects.playClick();
-                socket.emit('select_team', { team: Number(card.dataset.team) });
+socket.emit('select_team', { team: Number(card.dataset.team) });
             });
         }
 
@@ -523,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Disable all buttons
             document.querySelectorAll('.answer-btn').forEach(b => b.classList.add('disabled'));
 
-            const limit = 20;
+            const limit = currentTimeLimit;
             const timerVal = parseInt(gameTimer.textContent) || 0;
             const timeTaken = limit - timerVal;
 
@@ -550,22 +647,44 @@ document.addEventListener('DOMContentLoaded', () => {
             SoundEffects.playClick();
             window.location.href = '/';
         });
+
+        if (btnSkipBreak) {
+            btnSkipBreak.addEventListener('click', () => {
+                SoundEffects.playClick();
+                socket.emit('skip_break');
+            });
+        }
     }
 
     function displayQuestion(data) {
         hasAnswered = false;
-        expPopup.classList.remove('show'); // Hide explanation
-        hintPopup.classList.add('hidden'); // Hide hint
+        expPopup.classList.remove('show');
+        hintPopup.classList.add('hidden');
+
+        if (data.time_per_question) {
+            currentTimeLimit = data.time_per_question;
+        }
+        if (data.round) {
+            currentRound = data.round;
+            updateRoundUI(data);
+        }
 
         qArticle.textContent = data.article || "NĐ 13/2023";
         qText.textContent = data.question;
-        gameProgress.textContent = `Câu ${data.current_q} / ${data.total_q}`;
-        
-        // Reset lifelines UI for new question if not used
+        const roundLabel = tournamentMode && currentRound
+            ? `[${TOURNAMENT_ROUNDS[currentRound]?.name || 'Vòng ' + currentRound}] `
+            : '';
+        gameProgress.textContent = `${roundLabel}Câu ${data.current_q} / ${data.total_q}`;
+
         if (currentLifelines.fifty_fifty) btn5050.disabled = false;
         if (currentLifelines.hint) btnHint.disabled = false;
+answersContainer.innerHTML = '';
+        if (isEliminated) {
+            qText.textContent = `[Khán giả] ${data.question}`;
+            answersContainer.innerHTML = '<p class="spectator-notice">Đội của bạn đã bị loại. Theo dõi các đội còn lại.</p>';
+            return;
+        }
 
-        answersContainer.innerHTML = '';
         const labels = ['A', 'B', 'C', 'D'];
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
@@ -603,6 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!me) return;
 
         myTeam = me.team || null;
+        isEliminated = Boolean(me.is_eliminated);
         if (selectedTeamStatus) {
             selectedTeamStatus.textContent = myTeam ? `Bạn đang ở Đội ${myTeam}` : 'Chưa chọn đội';
         }
@@ -633,8 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
         teams.forEach(team => {
             const card = teamSelector.querySelector(`.team-card[data-team="${team.id}"]`);
             if (!card) return;
-
-            const count = card.querySelector('.team-count');
+const count = card.querySelector('.team-count');
             const members = card.querySelector('.team-members');
             const isFull = team.count >= team.capacity;
             const names = team.members.map(member => member.username).join(', ');
@@ -646,18 +765,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function updateLeaderboard(players) {
-        const sorted = buildTeamLeaderboard(players);
+    function updateLeaderboard(players, teamRankings) {
+        let sorted;
+        if (teamRankings && teamRankings.length) {
+            sorted = teamRankings.map(t => ({
+                team: t.team,
+                name: t.name || `Đội ${t.team}`,
+                score: t.score,
+                members: t.members || [],
+                eliminated: t.eliminated,
+                active: t.active,
+                rank: t.rank,
+            }));
+        } else {
+            sorted = buildTeamLeaderboard(players);
+        }
+
         gameLeaderboard.innerHTML = '';
-        
-        sorted.forEach(team => {
+        sorted.forEach((team, idx) => {
             const el = document.createElement('div');
-            el.className = 'player-item team-score-item';
+            const rank = team.rank || idx + 1;
+            const statusClass = team.eliminated ? 'team-eliminated' : (team.active === false ? 'team-inactive' : '');
+            el.className = `player-item team-score-item ${statusClass}`;
             el.id = `lb-team-${team.team}`;
             el.innerHTML = `
-                <div class="player-avatar">🛡️</div>
-                <div class="player-name" style="font-size: 0.9rem;">Đội ${team.team}</div>
-                <div class="player-team-badge">${team.members.length}/5</div>
+                <div class="player-avatar">${team.eliminated ? '❌' : (rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : '🛡️')}</div>
+                <div class="player-name" style="font-size: 0.9rem;">${team.name || 'Đội ' + team.team}</div>
+                <div class="player-team-badge">${team.members ? team.members.length : 0}/5</div>
                 <div class="player-score">${team.score}</div>
             `;
             gameLeaderboard.appendChild(el);
@@ -691,8 +825,119 @@ document.addEventListener('DOMContentLoaded', () => {
         return [...teamMap.values()].sort((a, b) => b.score - a.score || a.team - b.team);
     }
 
+    function updateModeUI(isTournament) {
+        document.querySelectorAll('.mode-card').forEach(card => {
+card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournament' : 'classic'));
+        });
+    }
+
+    function updateRoundUI(data) {
+        if (!gameRoundInfo || !roundBadge) return;
+        if (!tournamentMode && !data.tournament_mode) {
+            gameRoundInfo.classList.add('hidden');
+            return;
+        }
+        gameRoundInfo.classList.remove('hidden');
+        const roundNum = data.round || currentRound;
+        roundBadge.textContent = data.round_name || TOURNAMENT_ROUNDS[roundNum]?.name || `Vòng ${roundNum}`;
+        if (roundDesc) {
+            roundDesc.textContent = data.round_description || '';
+        }
+    }
+
+    function formatCountdown(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateBreakCountdown(seconds) {
+        if (breakCountdown) {
+            breakCountdown.textContent = formatCountdown(seconds);
+        }
+    }
+
+    function renderBreakRankings(rankings) {
+        if (!breakRankings) return;
+        breakRankings.innerHTML = '';
+        rankings.forEach(team => {
+            const el = document.createElement('div');
+            el.className = `break-rank-item ${team.eliminated ? 'eliminated' : 'active'}`;
+            el.innerHTML = `
+                <span class="break-rank-no">#${team.rank || '-'}</span>
+                <span class="break-rank-name">${team.name || 'Đội ' + team.team}</span>
+                <span class="break-rank-score">${team.score} điểm</span>
+                <span class="break-rank-status">${team.eliminated ? '❌ Loại' : '✅ Đi tiếp'}</span>
+            `;
+            breakRankings.appendChild(el);
+        });
+    }
+
+    function renderBreakTeams(teamIds, container, type) {
+        if (!container) return;
+        container.innerHTML = '';
+        if (!teamIds.length) {
+            container.innerHTML = '<span class="break-empty">—</span>';
+            return;
+        }
+        teamIds.forEach(id => {
+            const chip = document.createElement('span');
+            chip.className = `team-chip ${type}`;
+            chip.textContent = `Đội ${id}`;
+            container.appendChild(chip);
+        });
+    }
+
+    function showRoundBreakSummary(data) {
+        // Brief toast before break screen loads from round_break event
+        const advancing = (data.advancing_teams || []).map(t => `Đội ${t}`).join(', ');
+        showToast(`Kết thúc ${data.round_name}. Đi tiếp: ${advancing}`, 'success');
+    }
+
+    function displayTournamentResults(data) {
+        showScreen('results');
+        if (resultsTitle) resultsTitle.textContent = 'Kết Quả Giải Đấu';
+
+        const rankings = data.final_rankings || [];
+        const winner = data.winner;
+        const mvp = data.mvp;
+
+        if (tournamentWinnerBanner && winner) {
+            tournamentWinnerBanner.classList.remove('hidden');
+winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
+            if (mvp) {
+                mvpPlayerName.textContent = mvp.name || '—';
+                mvpPlayerScore.textContent = `(${mvp.score} điểm)`;
+            }
+        }
+
+        podium.innerHTML = '';
+        if (rankings.length > 0) {
+            if (rankings.length > 1) {
+                podium.appendChild(createPodiumItem(rankings[1], 2, '🥈'));
+            }
+            podium.appendChild(createPodiumItem(rankings[0], 1, '🏆'));
+            if (rankings.length > 2) {
+                podium.appendChild(createPodiumItem(rankings[2], 3, '🥉'));
+            }
+        }
+
+        const me = (data.final_scores || []).find(p => p.name === window.CURRENT_USER.username);
+        const myTeamResult = myTeam ? rankings.find(t => t.team === myTeam) : null;
+        const myStats = {
+            score: myTeamResult ? myTeamResult.score : (me ? me.score : 0),
+            correct_answers: me ? (me.score > 0 ? '?' : 0) : 0,
+            max_streak: me ? me.best_streak : 0,
+        };
+        resScore.textContent = myStats.score || 0;
+        resCorrect.textContent = myStats.correct_answers !== undefined ? myStats.correct_answers : '--';
+        resStreak.textContent = myStats.max_streak || 0;
+    }
+
     function displayResults(leaderboard, myStats) {
         showScreen('results');
+        if (tournamentWinnerBanner) tournamentWinnerBanner.classList.add('hidden');
+        if (resultsTitle) resultsTitle.textContent = 'Kết Quả Cuộc Thi';
         
         // Populate Podium
         podium.innerHTML = '';
@@ -724,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         div.innerHTML = `
             <div class="podium-avatar">${avatar}</div>
             <div class="podium-name">${medal} ${displayName}</div>
-            <div class="podium-score">${player.score ?? 0} điểm</div>
+<div class="podium-score">${player.score ?? 0} điểm</div>
             ${members}
         `;
         return div;
@@ -755,8 +1000,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function showScreen(name) {
         screenLobby.classList.remove('active');
         screenGame.classList.remove('active');
+        if (screenBreak) screenBreak.classList.remove('active');
         screenResults.classList.remove('active');
-        
+
         document.getElementById(`screen-${name}`).classList.add('active');
     }
 

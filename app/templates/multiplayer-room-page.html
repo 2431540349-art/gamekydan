@@ -9,6 +9,22 @@
         <h2>Phòng chờ</h2>
         <p>Chọn đội của bạn trước khi bắt đầu. Tối đa 10 đội, mỗi đội 5 người.</p>
         
+        <!-- Chế độ chơi -->
+        <div id="game-mode-section" class="game-mode-section mb-2">
+            <h3 class="mb-1 text-center" style="font-size: 0.9rem; color: var(--text-secondary);">Chế Độ Chơi</h3>
+            <div class="mode-toggle-grid" id="mode-selector">
+                <button type="button" class="mode-card selected" data-mode="tournament">
+                    <div class="mode-emoji">🏆</div>
+                    <div class="mode-name">Giải Đấu 4 Vòng</div>
+                    <div class="mode-info">10 → 5 → 3 → 2 đội</div>
+                </button>
+                <button type="button" class="mode-card" data-mode="classic">
+                    <div class="mode-emoji">🎯</div>
+                    <div class="mode-name">Chơi Đơn</div>
+                    <div class="mode-info">1 vòng, xếp hạng cuối</div>
+                </button>
+            </div>
+        </div>
         <!-- Room Info -->
         <div class="room-code-display">
             <span>ID phòng:</span>
@@ -42,7 +58,7 @@
                 </div>
                 <div class="diff-card diff-medium selected" data-diff="medium">
                     <div class="diff-emoji">⚖️</div>
-                    <div class="diff-name">Tiêu chuẩn</div>
+<div class="diff-name">Tiêu chuẩn</div>
                     <div class="diff-info">Quyền & Nghĩa vụ</div>
                 </div>
                 <div class="diff-card diff-hard" data-diff="hard">
@@ -77,6 +93,10 @@
 <!-- GAME SCREEN -->
 <div id="screen-game" class="screen game-container">
     <div class="game-header">
+        <div class="game-round-info hidden" id="game-round-info">
+            <span class="round-badge" id="round-badge">Vòng 1</span>
+            <span class="round-desc" id="round-desc"></span>
+        </div>
         <div class="game-progress" id="game-progress">Câu 1 / 10</div>
         <div class="game-timer">
             <span class="timer-circle" id="game-timer">15</span>
@@ -103,7 +123,7 @@
                         <span class="answer-label">C</span>
                         <span class="answer-text">Đáp án 3</span>
                     </button>
-                    <button class="answer-btn" data-idx="3">
+<button class="answer-btn" data-idx="3">
                         <span class="answer-label">D</span>
                         <span class="answer-text">Đáp án 4</span>
                     </button>
@@ -144,9 +164,50 @@
     💡 <span id="hint-text">Gợi ý ở đây</span>
 </div>
 
+<!-- ROUND BREAK SCREEN -->
+<div id="screen-break" class="screen break-container">
+    <div class="card break-card">
+        <h2 id="break-title">Kết quả vòng đấu</h2>
+        <p id="break-subtitle" class="break-subtitle">Đang tải thông tin vòng tiếp theo...</p>
+
+        <div class="break-countdown">
+            <div class="break-countdown-label">Vòng tiếp theo bắt đầu sau</div>
+            <div class="break-countdown-value" id="break-countdown">08:00</div>
+        </div>
+
+        <div class="break-section">
+            <h3>Bảng xếp hạng đội</h3>
+            <div class="break-rankings" id="break-rankings"></div>
+        </div>
+
+        <div class="break-section">
+            <h3>Đội đi tiếp</h3>
+            <div class="break-advancing" id="break-advancing"></div>
+        </div>
+
+        <div class="break-section">
+            <h3>Đội bị loại</h3>
+            <div class="break-eliminated" id="break-eliminated"></div>
+        </div>
+
+        <button id="btn-skip-break" class="btn btn-outline btn-block mt-2 hidden">Bỏ qua thời gian nghỉ (Host)</button>
+    </div>
+</div>
+
 <!-- RESULTS SCREEN -->
 <div id="screen-results" class="screen results-container">
-    <h1 class="results-title">Kết Quả Cuộc Thi</h1>
+    <h1 class="results-title" id="results-title">Kết Quả Cuộc Thi</h1>
+
+    <div id="tournament-winner-banner" class="tournament-winner-banner hidden">
+        <div class="winner-crown">👑</div>
+<h2 id="winner-team-name">Đội 1</h2>
+        <p class="winner-label">Nhà Vô Địch</p>
+        <div class="mvp-section">
+            <span class="mvp-badge">⭐ MVP</span>
+            <span id="mvp-player-name">Người chơi</span>
+            <span id="mvp-player-score" class="mvp-score"></span>
+        </div>
+    </div>
     
     <div class="podium" id="results-podium">
         <!-- Podium populated by JS -->

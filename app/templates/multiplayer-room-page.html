@@ -7,23 +7,16 @@
 <div id="screen-lobby" class="screen active lobby-container">
     <div class="card lobby-card mb-2">
         <h2>Phòng chờ</h2>
-        <p>Chọn đội của bạn trước khi bắt đầu. Tối đa 10 đội, mỗi đội 5 người.</p>
-        
-        <!-- Chế độ chơi -->
-        <div id="game-mode-section" class="game-mode-section mb-2">
-            <h3 class="mb-1 text-center" style="font-size: 0.9rem; color: var(--text-secondary);">Chế Độ Chơi</h3>
-            <div class="mode-toggle-grid" id="mode-selector">
-                <button type="button" class="mode-card selected" data-mode="tournament">
-                    <div class="mode-emoji">🏆</div>
-                    <div class="mode-name">Giải Đấu 4 Vòng</div>
-                    <div class="mode-info">10 → 5 → 3 → 2 đội</div>
-                </button>
-                <button type="button" class="mode-card" data-mode="classic">
-                    <div class="mode-emoji">🎯</div>
-                    <div class="mode-name">Chơi Đơn</div>
-                    <div class="mode-info">1 vòng, xếp hạng cuối</div>
-                </button>
-            </div>
+        <!-- Quy tắc & Cấu trúc vòng đấu -->
+        <div class="card rules-card mb-4">
+            <h3 class="rules-title">Quy tắc & Cấu trúc vòng đấu</h3>
+            <p class="rules-desc">Trận thi gồm 4 vòng loại. Hệ thống sẽ loại dần các đội theo điểm tổng mỗi vòng.</p>
+            <ol class="rules-list">
+                <li><strong>Vòng 1:</strong> 9 đội chơi (tất cả tham gia).</li>
+                <li><strong>Vòng 2:</strong> 5 đội (lọc theo hiệu suất).</li>
+                <li><strong>Vòng 3:</strong> 3 đội (bán kết).</li>
+                <li><strong>Vòng 4:</strong> 2 đội (chung kết).</li>
+            </ol>
         </div>
         <!-- Room Info -->
         <div class="room-code-display">
@@ -47,17 +40,7 @@
             </div>
         </div>
         
-        <!-- Rules: concise structure for the match -->
-        <div class="card rules-card mb-2">
-            <h3>Quy tắc & Cấu trúc vòng đấu</h3>
-            <p>Trận thi gồm 4 vòng loại. Hệ thống sẽ loại dần các đội theo điểm tổng mỗi vòng.</p>
-            <ul class="rules-list">
-                <li><strong>Vòng 1:</strong> 9 đội chơi (tất cả tham gia).</li>
-                <li><strong>Vòng 2:</strong> 5 đội (lọc theo hiệu suất).</li>
-                <li><strong>Vòng 3:</strong> 3 đội (bán kết).</li>
-                <li><strong>Vòng 4:</strong> 2 đội (chung kết).</li>
-            </ul>
-        </div>
+        
 
         <h3 class="mb-1 text-center mt-3" style="font-size: 0.9rem; color: var(--text-secondary);">Chọn Avatar</h3>
         <div class="avatar-grid" id="avatar-selector">

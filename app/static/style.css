@@ -670,6 +670,38 @@ margin-bottom: 1.5rem;
     font-family: 'Inter', monospace;
 }
 
+/* Rules card styling */
+.rules-card {
+    text-align: left;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(180deg, rgba(26,86,219,0.03), rgba(255,255,255,0.6));
+    border: 1px solid rgba(26,86,219,0.08);
+}
+.rules-title {
+    font-size: 1.05rem;
+    color: var(--primary-dark);
+    margin-bottom: 0.35rem;
+    font-weight: 800;
+}
+.rules-desc {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+.rules-list {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.rules-list li {
+    background: rgba(255,255,255,0.7);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(26,86,219,0.04);
+    box-shadow: 0 2px 8px rgba(11,61,139,0.03);
+}
+
 /* === GAME SCREEN === */
 .game-container {
     max-width: 1200px;

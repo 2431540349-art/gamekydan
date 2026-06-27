@@ -7,12 +7,28 @@
 <div id="screen-lobby" class="screen active lobby-container">
     <div class="card lobby-card mb-2">
         <h2>Phòng chờ</h2>
-        <p>Chọn thiết lập của bạn trước khi bắt đầu</p>
+        <p>Chọn đội của bạn trước khi bắt đầu. Tối đa 10 đội, mỗi đội 5 người.</p>
         
         <!-- Room Info -->
         <div class="room-code-display">
-            <span>Mã phòng:</span>
+            <span>ID phòng:</span>
             <span class="room-code-value" id="room-code-display">{{ room_code }}</span>
+        </div>
+
+        <div class="team-select-section">
+            <div class="team-select-header">
+                <h3>Chọn đội</h3>
+                <span id="selected-team-status">Chưa chọn đội</span>
+            </div>
+            <div class="team-grid" id="team-selector">
+                {% for team_id in range(1, 11) %}
+                <button class="team-card" type="button" data-team="{{ team_id }}">
+                    <span class="team-name">Đội {{ team_id }}</span>
+                    <span class="team-count">0/5</span>
+                    <span class="team-members">Đang chờ thành viên</span>
+                </button>
+                {% endfor %}
+            </div>
         </div>
         
         <!-- Settings Form (Only Host sees this fully active, others see selected or disabled) -->
@@ -42,7 +58,7 @@
             <!-- Avatars will be populated by JS -->
         </div>
 
-        <button id="btn-ready" class="btn btn-primary btn-block btn-lg mt-2">Sẵn sàng</button>
+        <button id="btn-ready" class="btn btn-primary btn-block btn-lg mt-2" disabled>Chọn đội để sẵn sàng</button>
         <button id="btn-start" class="btn btn-accent btn-block btn-lg mt-2 hidden">Bắt đầu Game</button>
     </div>
 
@@ -50,7 +66,7 @@
     <div class="card" style="padding: 1.5rem;">
         <h3 style="display: flex; justify-content: space-between; align-items: center;">
             <span>Người chơi</span>
-            <span id="player-count" class="badge">1/10</span>
+            <span id="player-count" class="badge">0/50</span>
         </h3>
         <div class="players-list" id="lobby-players">
             <!-- Players populated by JS -->
@@ -179,14 +195,14 @@
     window.GAME_CONFIG = {
         roomCode: "{{ room_code }}",
         isHost: {{ 'true' if is_host else 'false' }},
+        playerName: {{ player_name|default('Người chơi')|tojson }},
         avatars: ["👮", "👨‍⚖️", "🕵️", "👨‍💻", "👩‍💼", "🛡️", "📜", "⚖️"]
     };
     window.CURRENT_USER = {
-        username: "{{ current_user.username if current_user.is_authenticated else 'Khách' }}",
+        username: {{ (current_user.username if current_user.is_authenticated else player_name|default('Khách'))|tojson }},
         id: {{ current_user.id if current_user.is_authenticated else 0 }}
     };
 </script>
 <!-- Make sure to use the new JS file we will create -->
 <script src="{{ url_for('static', filename='scripts/game.js') }}"></script>
 {% endblock %}
-

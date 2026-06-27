@@ -18,6 +18,9 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode='threading', logger=Fal
 
 room_lock = Lock()
 rooms = {}
+TEAM_COUNT = 10
+TEAM_SIZE = 5
+MAX_PLAYERS_PER_ROOM = TEAM_COUNT * TEAM_SIZE
 
 DIFFICULTY_CONFIG = {
     'easy': {
@@ -61,6 +64,7 @@ def get_room_players_list(room_code):
             'user_id': p['user_id'],
             'username': p['name'],
             'avatar': p['avatar'],
+            'team': p.get('team'),
             'score': p['score'],
             'streak': p['streak'],
             'ready': p['is_ready'],
@@ -68,6 +72,25 @@ def get_room_players_list(room_code):
             'badges': badges_list
         })
     return res
+
+def get_room_teams_list(room_code):
+    players = get_room_players_list(room_code)
+    teams = []
+    for team_no in range(1, TEAM_COUNT + 1):
+        members = [p for p in players if p.get('team') == team_no]
+        teams.append({
+            'id': team_no,
+            'name': f"Đội {team_no}",
+            'count': len(members),
+            'capacity': TEAM_SIZE,
+            'members': members
+        })
+    return teams
+
+def emit_room_state(room_code):
+    players = get_room_players_list(room_code)
+    socketio.emit('player_list_update', players, to=room_code)
+    socketio.emit('team_list_update', get_room_teams_list(room_code), to=room_code)
 
 def get_user_badges(user_id):
     user = db_session.query(User).filter_by(id=user_id).first()
@@ -150,6 +173,7 @@ def on_create_room(data):
                         'user_id': user_db_id,
                         'name': name,
                         'avatar': avatar,
+                        'team': None,
                         'score': 0,
                         'streak': 0,
                         'best_streak': 0,
@@ -158,7 +182,7 @@ def on_create_room(data):
                         'total_time': 0.0,
                         'used_lifelines': {'fifty_fifty': False, 'hint': False},
                         'used_lifeline_on_this': False,
-                        'is_ready': True
+                        'is_ready': False
                     }
                 },
                 'game_id': secrets.token_hex(8),
@@ -170,7 +194,8 @@ def on_create_room(data):
         emit('room_created', {
             'room_code': room_code,
             'difficulty': difficulty,
-            'players': get_room_players_list(room_code)
+            'players': get_room_players_list(room_code),
+            'teams': get_room_teams_list(room_code)
         })
     except Exception as e:
         emit('error', {'message': f"Lỗi tạo phòng: {str(e)}"})
@@ -190,6 +215,9 @@ def on_join_room(data):
             if room['started']:
                 emit('error', {'message': 'Ván đấu đã bắt đầu!'})
                 return
+            if len(room['players']) >= MAX_PLAYERS_PER_ROOM:
+                emit('error', {'message': 'Phòng đã đủ 50 người!'})
+                return
                 
             user_db_id = None
             if current_user.is_authenticated:
@@ -208,6 +236,7 @@ def on_join_room(data):
                 'user_id': user_db_id,
                 'name': name,
                 'avatar': avatar,
+                'team': None,
                 'score': 0,
                 'streak': 0,
                 'best_streak': 0,
@@ -216,17 +245,18 @@ def on_join_room(data):
                 'total_time': 0.0,
                 'used_lifelines': {'fifty_fifty': False, 'hint': False},
                 'used_lifeline_on_this': False,
-                'is_ready': is_player_host
+                'is_ready': False
             }
             
         join_room(room_code)
         
-        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+        emit_room_state(room_code)
         
         emit('room_created', {
             'room_code': room_code,
             'difficulty': room['difficulty'],
-            'players': get_room_players_list(room_code)
+            'players': get_room_players_list(room_code),
+            'teams': get_room_teams_list(room_code)
         })
     except Exception as e:
         emit('error', {'message': f"Lỗi tham gia phòng: {str(e)}"})
@@ -244,10 +274,53 @@ def on_toggle_ready(data):
             room = rooms[room_code]
             if sid in room['players']:
                 is_host = (room['host_sid'] == sid)
+                if not room['players'][sid].get('team'):
+                    emit('error', {'message': 'Bạn cần chọn đội trước khi sẵn sàng!'})
+                    return
                 room['players'][sid]['is_ready'] = True if is_host else ready
-        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+        emit_room_state(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi sẵn sàng: {str(e)}"})
+
+
+@socketio.on('select_team')
+def on_select_team(data):
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+
+        team_id = int(data.get('team'))
+        if team_id < 1 or team_id > TEAM_COUNT:
+            emit('error', {'message': 'Đội không hợp lệ!'})
+            return
+
+        with room_lock:
+            room = rooms[room_code]
+            if room.get('started'):
+                emit('error', {'message': 'Không thể đổi đội khi ván đấu đã bắt đầu!'})
+                return
+            if sid not in room['players']:
+                return
+
+            members_in_team = [
+                player_sid
+                for player_sid, player in room['players'].items()
+                if player_sid != sid and player.get('team') == team_id
+            ]
+            if len(members_in_team) >= TEAM_SIZE:
+                emit('error', {'message': f'Đội {team_id} đã đủ 5 người!'})
+                return
+
+            room['players'][sid]['team'] = team_id
+            room['players'][sid]['is_ready'] = False
+
+        emit_room_state(room_code)
+    except (TypeError, ValueError):
+        emit('error', {'message': 'Đội không hợp lệ!'})
+    except Exception as e:
+        emit('error', {'message': f"Lỗi chọn đội: {str(e)}"})
 
 
 @socketio.on('update_avatar')
@@ -263,7 +336,7 @@ def on_update_avatar(data):
                 room = rooms[room_code]
                 if sid in room['players']:
                     room['players'][sid]['avatar'] = avatar
-            socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+            emit_room_state(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi cập nhật avatar: {str(e)}"})
 
@@ -282,7 +355,7 @@ def on_update_settings(data):
                 if room['host_sid'] == sid:
                     room['difficulty'] = difficulty
             socketio.emit('settings_updated', {'difficulty': difficulty}, to=room_code)
-            socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+            emit_room_state(room_code)
     except Exception as e:
         emit('error', {'message': f"Lỗi cập nhật thiết lập: {str(e)}"})
 
@@ -296,6 +369,15 @@ def on_start_game():
         room = rooms[room_code]
         if room['host_sid'] != sid:
             emit('error', {'message': 'Chỉ có trưởng phòng mới có thể bắt đầu game!'})
+            return
+        if not room['players']:
+            emit('error', {'message': 'Phòng chưa có người chơi!'})
+            return
+        if any(not p.get('team') for p in room['players'].values()):
+            emit('error', {'message': 'Tất cả người chơi cần chọn đội trước khi bắt đầu!'})
+            return
+        if any(not p.get('is_ready') for p in room['players'].values()):
+            emit('error', {'message': 'Tất cả người chơi cần sẵn sàng trước khi bắt đầu!'})
             return
             
         diff = room['difficulty']
@@ -524,6 +606,7 @@ def end_game(room_code):
                 'sid': sid,
                 'name': p['name'],
                 'avatar': p['avatar'],
+                'team': p.get('team'),
                 'score': p['score'],
                 'best_streak': p['best_streak'],
                 'wrong_answers': p['wrong_answers'],
@@ -690,7 +773,7 @@ def handle_player_departure(sid, room_code):
             'players': get_room_players_list(room_code)
         }, to=room_code)
         
-        socketio.emit('player_list_update', get_room_players_list(room_code), to=room_code)
+        emit_room_state(room_code)
         
         if not room['players']:
             if room.get('timer_thread'):

@@ -1,51 +1,68 @@
 {% extends "layout.html" %}
 
-{% block title %}Chơi cùng bạn bè - DataGuard VN{% endblock %}
+{% block title %}Vào phòng chơi - DataGuard VN{% endblock %}
 
 {% block content %}
-<div style="max-width: 540px; margin: 3rem auto; padding: 0 1.5rem;">
-    <div class="card" style="padding: 2.5rem; text-align: center;">
-        <div style="font-size: 3rem; margin-bottom: 1rem;">🎮</div>
-        <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Multiplayer</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-            Chơi cùng bạn bè trong thời gian thực
-        </p>
+<section class="guest-entry">
+    <div class="card guest-entry-card">
+        <div class="hero-badge">Chơi nhanh không cần tài khoản</div>
+        <h1>Vào phòng bằng mã 4 số</h1>
+        <p>Mỗi phòng có tối đa 10 đội, mỗi đội 5 người. Nhập tên của bạn, chọn mã phòng rồi vào chọn đội.</p>
 
-        {% if current_user.is_authenticated %}
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Create Room -->
-            <form action="{{ url_for('main.create_room') }}" method="POST">
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    ➕ Tạo phòng mới
-                </button>
-            </form>
-
-            <div style="display: flex; align-items: center; gap: 1rem; color: var(--text-muted);">
-                <hr style="flex: 1; border-color: var(--border-color);">
-                <span style="font-size: 0.85rem;">hoặc</span>
-                <hr style="flex: 1; border-color: var(--border-color);">
+        <form action="{{ url_for('main.guest_room_route') }}" method="POST" class="guest-room-form">
+            <div class="input-group">
+                <label for="player_name">Tên người chơi</label>
+                <input
+                    type="text"
+                    id="player_name"
+                    name="player_name"
+                    class="input-field"
+                    placeholder="Ví dụ: Long"
+                    maxlength="32"
+                    required
+                    value="{{ current_user.username if current_user.is_authenticated else '' }}"
+                >
             </div>
 
-            <!-- Join Room -->
-            <form action="{{ url_for('main.join_room_route') }}" method="POST"
-                  style="display: flex; gap: 0.75rem;">
-                <input type="text" name="room_code" class="input-field"
-                       placeholder="Nhập mã phòng (6 ký tự)" required maxlength="6"
-                       style="text-transform: uppercase; flex: 1; text-align: center; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.2em;">
-                <button type="submit" class="btn btn-accent btn-lg" style="white-space: nowrap;">
-                    Vào phòng
-                </button>
-            </form>
-        </div>
-        {% else %}
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            Bạn cần đăng nhập để chơi multiplayer.
-        </p>
-        <div style="display: flex; gap: 1rem; justify-content: center;">
-            <a href="/login" class="btn btn-primary btn-lg">Đăng nhập</a>
-            <a href="/register" class="btn btn-outline btn-lg">Tạo tài khoản</a>
-        </div>
-        {% endif %}
+            <div class="input-group">
+                <label for="room_code">ID phòng 4 số</label>
+                <input
+                    type="text"
+                    id="room_code"
+                    name="room_code"
+                    class="input-field room-code-input"
+                    placeholder="1234"
+                    inputmode="numeric"
+                    pattern="[0-9]{4}"
+                    minlength="4"
+                    maxlength="4"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg">Vào phòng</button>
+        </form>
+
+        <form action="{{ url_for('main.create_room') }}" method="POST" class="guest-create-form">
+            <input type="hidden" name="player_name" id="quick-player-name">
+            <button type="submit" class="btn btn-outline btn-block">Tạo phòng 4 số ngẫu nhiên</button>
+        </form>
     </div>
-</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const playerName = document.getElementById('player_name');
+        const quickName = document.getElementById('quick-player-name');
+        const quickForm = document.querySelector('.guest-create-form');
+
+        if (!playerName || !quickName || !quickForm) return;
+
+        quickForm.addEventListener('submit', () => {
+            quickName.value = playerName.value.trim() || 'Người chơi';
+        });
+    });
+</script>
 {% endblock %}

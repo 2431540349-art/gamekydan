@@ -173,6 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerCount = document.getElementById('player-count');
     const btnReady = document.getElementById('btn-ready');
     const btnStart = document.getElementById('btn-start');
+    const teamSelector = document.getElementById('team-selector');
+    const selectedTeamStatus = document.getElementById('selected-team-status');
     
     // Game Elements
     const qArticle = document.getElementById('q-article');
@@ -205,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let socket;
     let myAvatar = '👤';
     let myDifficulty = 'medium';
+    let myTeam = null;
     let isReady = false;
     let hasAnswered = false;
     let currentLifelines = { fifty_fifty: true, hint: true };
@@ -226,23 +229,29 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Connected to server');
             socket.emit('join_room', { 
                 room_code: window.GAME_CONFIG.roomCode,
-                avatar: myAvatar
+                avatar: myAvatar,
+                name: window.GAME_CONFIG.playerName || window.CURRENT_USER.username || 'Người chơi'
             });
         });
 
         socket.on('player_list_update', (players) => {
             updatePlayerList(players);
             updateLeaderboard(players);
+            updateMyTeamState(players);
             
             // Check if all players ready
             if (window.GAME_CONFIG.isHost) {
-                const allReady = players.every(p => p.ready);
+                const allReady = players.every(p => p.ready && p.team);
                 if (allReady && players.length > 0) {
                     btnStart.classList.remove('hidden');
                 } else {
                     btnStart.classList.add('hidden');
                 }
             }
+        });
+
+        socket.on('team_list_update', (teams) => {
+            updateTeamGrid(teams);
         });
 
         socket.on('settings_updated', (data) => {
@@ -384,12 +393,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const leaderboard = data.final_scores || [];
             // find my own entry
             const me = leaderboard.find(p => p.name === window.CURRENT_USER.username);
+            const teamLeaderboard = buildTeamLeaderboard(leaderboard);
+            const myTeamResult = myTeam ? teamLeaderboard.find(t => t.team === myTeam) : null;
             const myStats = {
-                score: me ? me.score : 0,
+                score: myTeamResult ? myTeamResult.score : (me ? me.score : 0),
                 correct_answers: me ? (me.score > 0 ? '?' : 0) : 0,
                 max_streak: me ? me.best_streak : 0
             };
-            displayResults(leaderboard, myStats);
+            displayResults(teamLeaderboard.length ? teamLeaderboard : leaderboard, myStats);
             Confetti.burst();
             setTimeout(() => Confetti.burst(), 500);
         });
@@ -441,6 +452,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Ready Button
         btnReady.addEventListener('click', () => {
+            if (!myTeam) {
+                showToast('Bạn cần chọn đội trước khi sẵn sàng!', 'error');
+                return;
+            }
             SoundEffects.playClick();
             isReady = !isReady;
             socket.emit('toggle_ready', { ready: isReady });
@@ -452,6 +467,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnReady.className = "btn btn-primary btn-block btn-lg mt-2";
             }
         });
+
+        // Team selection
+        if (teamSelector) {
+            teamSelector.addEventListener('click', (e) => {
+                const card = e.target.closest('.team-card');
+                if (!card || card.classList.contains('full')) return;
+
+                SoundEffects.playClick();
+                socket.emit('select_team', { team: Number(card.dataset.team) });
+            });
+        }
 
         // Start Button
         if (btnStart) {
@@ -534,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePlayerList(players) {
         lobbyPlayers.innerHTML = '';
-        playerCount.textContent = `${players.length}/10`;
+        playerCount.textContent = `${players.length}/50`;
         
         players.forEach(p => {
             const el = document.createElement('div');
@@ -542,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = `
                 <div class="player-avatar">${p.avatar}</div>
                 <div class="player-name">${p.username} ${p.is_host ? '👑' : ''}</div>
+                <div class="player-team-badge">${p.team ? `Đội ${p.team}` : 'Chưa chọn đội'}</div>
                 <div style="font-size: 0.8rem; font-weight: bold; color: ${p.ready ? 'var(--success)' : 'var(--text-muted)'}">
                     ${p.ready ? 'Sẵn sàng' : 'Chờ...'}
                 </div>
@@ -550,23 +577,97 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function updateMyTeamState(players) {
+        const me = players.find(p => p.sid === socket.id);
+        if (!me) return;
+
+        myTeam = me.team || null;
+        if (selectedTeamStatus) {
+            selectedTeamStatus.textContent = myTeam ? `Bạn đang ở Đội ${myTeam}` : 'Chưa chọn đội';
+        }
+
+        if (btnReady) {
+            btnReady.disabled = !myTeam;
+            if (!myTeam) {
+                isReady = false;
+                btnReady.textContent = 'Chọn đội để sẵn sàng';
+                btnReady.className = 'btn btn-primary btn-block btn-lg mt-2';
+            } else {
+                isReady = Boolean(me.ready);
+                btnReady.textContent = isReady ? 'Hủy sẵn sàng' : 'Sẵn sàng';
+                btnReady.className = isReady
+                    ? 'btn btn-outline btn-block btn-lg mt-2'
+                    : 'btn btn-primary btn-block btn-lg mt-2';
+            }
+        }
+
+        document.querySelectorAll('.team-card').forEach(card => {
+            card.classList.toggle('selected', Number(card.dataset.team) === myTeam);
+        });
+    }
+
+    function updateTeamGrid(teams) {
+        if (!teamSelector) return;
+
+        teams.forEach(team => {
+            const card = teamSelector.querySelector(`.team-card[data-team="${team.id}"]`);
+            if (!card) return;
+
+            const count = card.querySelector('.team-count');
+            const members = card.querySelector('.team-members');
+            const isFull = team.count >= team.capacity;
+            const names = team.members.map(member => member.username).join(', ');
+
+            count.textContent = `${team.count}/${team.capacity}`;
+            members.textContent = names || 'Đang chờ thành viên';
+            card.classList.toggle('full', isFull);
+            card.disabled = isFull && Number(card.dataset.team) !== myTeam;
+        });
+    }
+
     function updateLeaderboard(players) {
-        // Sort by score desc
-        const sorted = [...players].sort((a, b) => b.score - a.score);
+        const sorted = buildTeamLeaderboard(players);
         gameLeaderboard.innerHTML = '';
         
-        sorted.forEach(p => {
+        sorted.forEach(team => {
             const el = document.createElement('div');
-            el.className = 'player-item';
-            el.id = `lb-player-${p.user_id}`;
+            el.className = 'player-item team-score-item';
+            el.id = `lb-team-${team.team}`;
             el.innerHTML = `
-                <div class="player-avatar">${p.avatar}</div>
-                <div class="player-name" style="font-size: 0.9rem;">${p.username}</div>
-                ${p.streak > 2 ? `<div class="player-streak-badge">🔥 ${p.streak}</div>` : ''}
-                <div class="player-score">${p.score}</div>
+                <div class="player-avatar">🛡️</div>
+                <div class="player-name" style="font-size: 0.9rem;">Đội ${team.team}</div>
+                <div class="player-team-badge">${team.members.length}/5</div>
+                <div class="player-score">${team.score}</div>
             `;
             gameLeaderboard.appendChild(el);
         });
+    }
+
+    function buildTeamLeaderboard(players) {
+        const teamMap = new Map();
+
+        players.forEach(player => {
+            const teamId = Number(player.team);
+            if (!teamId) return;
+
+            if (!teamMap.has(teamId)) {
+                teamMap.set(teamId, {
+                    team: teamId,
+                    name: `Đội ${teamId}`,
+                    avatar: '🛡️',
+                    score: 0,
+                    members: [],
+                    best_streak: 0
+                });
+            }
+
+            const team = teamMap.get(teamId);
+            team.score += Number(player.score || 0);
+            team.members.push(player);
+            team.best_streak = Math.max(team.best_streak, Number(player.best_streak || player.streak || 0));
+        });
+
+        return [...teamMap.values()].sort((a, b) => b.score - a.score || a.team - b.team);
     }
 
     function displayResults(leaderboard, myStats) {
@@ -598,10 +699,12 @@ document.addEventListener('DOMContentLoaded', () => {
         div.className = `podium-item podium-${rank === 1 ? '1st' : rank === 2 ? '2nd' : '3rd'}`;
         const displayName = player.name || player.username || 'Ẩn danh';
         const avatar = player.avatar || '👤';
+        const members = player.members ? `<div class="podium-members">${player.members.map(p => p.name || p.username).join(', ')}</div>` : '';
         div.innerHTML = `
             <div class="podium-avatar">${avatar}</div>
             <div class="podium-name">${medal} ${displayName}</div>
             <div class="podium-score">${player.score ?? 0} điểm</div>
+            ${members}
         `;
         return div;
     }

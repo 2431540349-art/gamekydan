@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 """The route handler for html pages"""
 
-from flask import Blueprint, abort, redirect, render_template, request, url_for, jsonify
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import text
 from datetime import datetime
@@ -31,12 +31,19 @@ def lobby():
 
 
 @pages.route("/game/create", methods=["POST"])
-@login_required
 def create_room():
+    import random
     import secrets
-    room_code = secrets.token_hex(3).upper()
     from app.websocket import rooms, room_lock
+
+    player_name = request.form.get("player_name", "").strip()
+    if not player_name:
+        player_name = current_user.username if current_user.is_authenticated else "Người chơi"
+
     with room_lock:
+        room_code = f"{random.randint(0, 9999):04d}"
+        while room_code in rooms:
+            room_code = f"{random.randint(0, 9999):04d}"
         rooms[room_code] = {
             'host_sid': None,
             'difficulty': 'medium',
@@ -50,31 +57,72 @@ def create_room():
             'game_id': secrets.token_hex(8),
             'timer_thread': None
         }
-    return redirect(url_for("main.game_room", room_id=room_code, host="true"))
+
+    session["guest_player_name"] = player_name
+    return redirect(url_for("main.game_room", room_id=room_code, host="true", name=player_name))
+
+
+@pages.route("/game/guest", methods=["POST"])
+def guest_room_route():
+    import secrets
+    room_code = request.form.get("room_code", "").strip()
+    player_name = request.form.get("player_name", "").strip()
+
+    if not (room_code.isdigit() and len(room_code) == 4):
+        flash("Mã phòng phải gồm đúng 4 số.", "error")
+        return redirect(url_for("main.lobby"))
+
+    if not player_name:
+        flash("Vui lòng nhập tên người chơi.", "error")
+        return redirect(url_for("main.lobby"))
+
+    from app.websocket import rooms, room_lock
+    with room_lock:
+        is_new_room = room_code not in rooms
+        if is_new_room:
+            rooms[room_code] = {
+                'host_sid': None,
+                'difficulty': 'medium',
+                'started': False,
+                'questions': [],
+                'current_index': 0,
+                'active_question': None,
+                'question_start_time': 0,
+                'player_answers_submitted': {},
+                'players': {},
+                'game_id': secrets.token_hex(8),
+                'timer_thread': None
+            }
+
+    session["guest_player_name"] = player_name
+    return redirect(url_for("main.game_room", room_id=room_code, host="true" if is_new_room else "false", name=player_name))
 
 
 @pages.route("/game/join", methods=["POST"])
-@login_required
 def join_room_route():
     room_code = request.form.get("room_code", "").upper().strip()
+    player_name = request.form.get("player_name", "").strip()
     from app.websocket import rooms
     if room_code not in rooms:
-        from flask import flash
         flash("Phòng chơi không tồn tại!", "error")
-        return redirect(url_for("main.home"))
-    return redirect(url_for("main.game_room", room_id=room_code))
+        return redirect(url_for("main.lobby"))
+    if player_name:
+        session["guest_player_name"] = player_name
+    return redirect(url_for("main.game_room", room_id=room_code, name=player_name))
 
 
 @pages.route("/game/<room_id>")
-@login_required
 def game_room(room_id):
     """Play the game in a multiplayer room"""
     from app.websocket import rooms
     if room_id not in rooms:
         return abort(404)
     host_param = request.args.get('host', '').lower()
+    player_name = request.args.get("name") or session.get("guest_player_name") or (
+        current_user.username if current_user.is_authenticated else "Người chơi"
+    )
     is_host = (host_param in ('true', '1')) or rooms[room_id]['host_sid'] is None or len(rooms[room_id]['players']) == 0
-    return render_template("multiplayer-room-page.html", room_code=room_id, is_host=is_host)
+    return render_template("multiplayer-room-page.html", room_code=room_id, is_host=is_host, player_name=player_name)
 
 
 @pages.route("/profile")

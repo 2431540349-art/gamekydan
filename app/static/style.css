@@ -1883,3 +1883,323 @@ body.cyber-auth .btn-primary:hover {
 .flex-center { display: flex; align-items: center; justify-content: center; }
 .gap-1 { gap: 0.5rem; }
 .gap-2 { gap: 1rem; }
+
+/* === LIGHT CYBERSECURITY UI SYNC === */
+:root {
+    --primary: #0f62fe;
+    --primary-dark: #0847b8;
+    --primary-light: #3b82f6;
+    --secondary: #0f172a;
+    --accent: #f59e0b;
+    --accent-light: #fbbf24;
+    --success: #0f9f8f;
+    --success-light: #2dd4bf;
+    --danger: #dc2626;
+    --danger-light: #fb7185;
+    --surface: #f6f9ff;
+    --card: rgba(255,255,255,0.92);
+    --card-border: rgba(15,98,254,0.14);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #8a97ab;
+    --gradient-primary: linear-gradient(135deg, #0f62fe 0%, #14b8a6 100%);
+    --gradient-accent: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 12px 30px rgba(15, 98, 254, 0.12);
+    --shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.14);
+    --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.16);
+    --shadow-glow: 0 0 34px rgba(20,184,166,0.2);
+}
+
+body {
+    background:
+        linear-gradient(135deg, rgba(15,98,254,0.05), rgba(20,184,166,0.07)),
+        var(--surface);
+}
+
+body::before {
+    background:
+        radial-gradient(circle 680px at 10% 5%, rgba(15,98,254,0.12), transparent 60%),
+        radial-gradient(circle 560px at 90% 20%, rgba(20,184,166,0.12), transparent 62%),
+        radial-gradient(circle 440px at 70% 85%, rgba(245,158,11,0.08), transparent 58%),
+        linear-gradient(90deg, rgba(15,98,254,0.035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(20,184,166,0.035) 1px, transparent 1px);
+    background-size: auto, auto, auto, 48px 48px, 48px 48px;
+}
+
+.navbar {
+    background: rgba(255,255,255,0.9);
+    border-bottom: 1px solid rgba(15,98,254,0.12);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.logo {
+    color: var(--secondary);
+}
+
+.logo-icon::before {
+    content: "🛡️";
+}
+
+.brand-main {
+    display: inline;
+}
+
+.card,
+.article-card,
+.badge-item,
+.answer-btn,
+.lifeline-btn,
+.input-field {
+    border-color: var(--card-border);
+}
+
+.card {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.92));
+}
+
+.card:hover {
+    border-color: rgba(20,184,166,0.28);
+}
+
+.hero-section {
+    position: relative;
+}
+
+.hero-section::before {
+    content: "";
+    width: min(720px, 82vw);
+    height: min(720px, 82vw);
+    position: absolute;
+    inset: 1rem auto auto 50%;
+    transform: translateX(-50%);
+    z-index: -1;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(20,184,166,0.12), transparent 55%),
+        conic-gradient(from 0deg, transparent, rgba(15,98,254,0.12), transparent, rgba(245,158,11,0.1), transparent);
+    opacity: 0.82;
+}
+
+.hero-badge,
+.question-article,
+.nav-user {
+    background: rgba(20,184,166,0.1);
+    color: #0f766e;
+}
+
+.hero-title,
+.results-title {
+    background: linear-gradient(135deg, #0f62fe 0%, #0f9f8f 55%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    box-shadow: 0 12px 28px rgba(15,98,254,0.24);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 16px 36px rgba(20,184,166,0.28);
+}
+
+.btn-accent {
+    background: var(--gradient-accent);
+}
+
+.room-code-value,
+.timer-circle {
+    background: linear-gradient(135deg, rgba(15,98,254,0.12), rgba(20,184,166,0.16));
+    color: var(--primary-dark);
+}
+
+.timer-circle {
+    color: white;
+    background: var(--gradient-primary);
+}
+
+.answer-btn,
+.solo-answer-btn,
+.avatar-option,
+.article-card,
+.badge-item {
+    background: rgba(255,255,255,0.86);
+}
+
+.answer-btn:hover:not(.disabled):not(.correct):not(.wrong),
+.solo-answer-btn:hover {
+    border-color: var(--success-light);
+    background: rgba(20,184,166,0.08);
+}
+
+.player-item {
+    background: rgba(15,98,254,0.06);
+}
+
+.leaderboard-panel h3,
+.panel-kicker {
+    color: #0f766e;
+}
+
+body.cyber-auth {
+    --cyber-bg: #f6f9ff;
+    --cyber-panel: rgba(255,255,255,0.92);
+    --cyber-panel-dark: rgba(248,251,255,0.94);
+    --cyber-line: rgba(15,98,254,0.16);
+    --cyber-muted: #64748b;
+    --cyber-text: #0f172a;
+    --cyber-amber: #f59e0b;
+    --cyber-teal: #14b8a6;
+    background:
+        linear-gradient(135deg, rgba(15,98,254,0.06), rgba(20,184,166,0.08)),
+        #f6f9ff;
+    color: var(--cyber-text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body.cyber-auth::before {
+    background:
+        radial-gradient(circle 660px at 18% 24%, rgba(15,98,254,0.16), transparent 58%),
+        radial-gradient(circle 540px at 84% 20%, rgba(20,184,166,0.16), transparent 58%),
+        radial-gradient(circle 380px at 80% 82%, rgba(245,158,11,0.12), transparent 58%),
+        linear-gradient(90deg, rgba(15,98,254,0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(20,184,166,0.04) 1px, transparent 1px);
+    background-size: auto, auto, auto, 44px 44px, 44px 44px;
+}
+
+body.cyber-auth::after {
+    background:
+        radial-gradient(ellipse at 22% 44%, transparent 0 12%, rgba(20,184,166,0.08) 12.2% 12.6%, transparent 13% 20%, rgba(15,98,254,0.07) 20.2% 20.6%, transparent 21%),
+        linear-gradient(124deg, transparent 0 18%, rgba(20,184,166,0.14) 18.2% 18.7%, transparent 19% 62%, rgba(245,158,11,0.12) 62.2% 62.7%, transparent 63%);
+}
+
+body.cyber-auth .navbar {
+    background: rgba(255,255,255,0.9);
+    border-bottom: 1px solid rgba(15,98,254,0.14);
+    box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+}
+
+body.cyber-auth .navbar::after {
+    background: linear-gradient(90deg, transparent, #0f62fe, #14b8a6, #f59e0b, transparent);
+}
+
+body.cyber-auth .logo {
+    color: var(--primary);
+    text-shadow: none;
+}
+
+body.cyber-auth .logo-icon {
+    background: var(--cyber-teal);
+    box-shadow: 0 0 14px rgba(20,184,166,0.46);
+}
+
+body.cyber-auth .cyber-header-tags span,
+body.cyber-auth .hud-chip,
+body.cyber-auth .hud-control,
+body.cyber-auth .trust-meter,
+body.cyber-auth .music-meter {
+    background: rgba(255,255,255,0.78);
+    border-color: rgba(15,98,254,0.16);
+    color: #64748b;
+}
+
+body.cyber-auth .cyber-header-tags span:last-child {
+    color: var(--cyber-amber);
+    border-color: rgba(245,158,11,0.42);
+}
+
+body.cyber-auth .cyber-header-tags strong,
+body.cyber-auth .trust-meter strong {
+    color: var(--text-primary);
+}
+
+.cyber-card {
+    border: 1px solid rgba(15,98,254,0.14);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.92));
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.8),
+        0 24px 60px rgba(15, 98, 254, 0.14);
+}
+
+.cyber-card::before {
+    background:
+        linear-gradient(90deg, rgba(20,184,166,0.12), transparent 24%),
+        linear-gradient(180deg, rgba(15,98,254,0.06), transparent 40%);
+}
+
+.cyber-card-title h1 {
+    color: var(--primary);
+    text-shadow: none;
+}
+
+.cyber-card-title p,
+.signal-stats span,
+.guest-link {
+    color: var(--text-secondary);
+}
+
+.auth-tabs a {
+    background: rgba(248,251,255,0.9);
+    border-color: rgba(15,98,254,0.16);
+    color: var(--text-secondary);
+}
+
+.auth-tabs a.active {
+    color: #0f766e;
+    border-color: var(--cyber-teal);
+    background: rgba(20,184,166,0.09);
+}
+
+body.cyber-auth .input-group label {
+    color: var(--text-secondary);
+}
+
+body.cyber-auth .input-field {
+    background: rgba(255,255,255,0.92);
+    border-color: rgba(15,98,254,0.16);
+    color: var(--text-primary);
+}
+
+body.cyber-auth .input-field::placeholder {
+    color: #94a3b8;
+}
+
+body.cyber-auth .btn-primary {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: 0 14px 32px rgba(15,98,254,0.22);
+}
+
+.guest-link {
+    background: rgba(255,255,255,0.7);
+    border-color: rgba(15,98,254,0.14);
+}
+
+.cyber-status-panel {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.9));
+}
+
+.radar {
+    border-color: rgba(20,184,166,0.26);
+    background:
+        radial-gradient(circle, transparent 0 22%, rgba(20,184,166,0.11) 22.5% 23%, transparent 23.5% 45%, rgba(15,98,254,0.1) 45.5% 46%, transparent 46.5%),
+        repeating-conic-gradient(from 0deg, rgba(20,184,166,0.11) 0deg 1deg, transparent 1deg 18deg);
+}
+
+.radar-sweep {
+    background: conic-gradient(from 220deg, rgba(20,184,166,0.42), transparent 52deg);
+}
+
+.signal-stats strong {
+    color: var(--text-primary);
+}
+
+.terminal-log {
+    background: rgba(239,246,255,0.72);
+    border-color: rgba(15,98,254,0.14);
+    color: #0f766e;
+}

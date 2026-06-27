@@ -172,10 +172,12 @@ let active = false;
     // Basic UI Elements
     const screenLobby = document.getElementById('screen-lobby');
     const screenScene = document.getElementById('screen-scene');
+    const screenRoundIntro = document.getElementById('screen-round-intro');
     const screenGame = document.getElementById('screen-game');
     const screenBreak = document.getElementById('screen-break');
     const screenResults = document.getElementById('screen-results');
     const sceneCountdown = document.getElementById('scene-countdown');
+    const roundIntroCountdown = document.getElementById('round-intro-countdown');
     
     const lobbyPlayers = document.getElementById('lobby-players');
     const playerCount = document.getElementById('player-count');
@@ -239,6 +241,7 @@ const resCorrect = document.getElementById('res-correct');
     let currentTimeLimit = 20;
     let isEliminated = false;
     let sceneCountdownTimer = null;
+    let roundIntroTimer = null;
 
     const TOURNAMENT_ROUNDS = {
         1: { name: 'Vòng 1 — Loại sơ' },
@@ -348,7 +351,12 @@ const resCorrect = document.getElementById('res-correct');
 
         socket.on('game_started', (data) => {
             stopSceneCountdown();
-            showScreen('game');
+            const shouldShowRoundIntro = Boolean(data.tournament_mode) && Number(data.round) === 1;
+            if (shouldShowRoundIntro) {
+                showRoundIntro(data);
+            } else {
+                showScreen('game');
+            }
             tournamentMode = Boolean(data.tournament_mode);
             if (data.round) {
                 currentRound = data.round;
@@ -376,6 +384,8 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('new_question', (data) => {
+            stopRoundIntroCountdown();
+            showScreen('game');
             displayQuestion(data);
         });
 
@@ -1017,9 +1027,38 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         }
     }
 
+    function showRoundIntro(data = {}) {
+        let remaining = Number(data.round_intro_seconds || 5);
+
+        stopRoundIntroCountdown();
+        if (roundIntroCountdown) {
+            roundIntroCountdown.textContent = remaining;
+        }
+        showScreen('round-intro');
+
+        roundIntroTimer = setInterval(() => {
+            remaining = Math.max(0, remaining - 1);
+            if (roundIntroCountdown) {
+                roundIntroCountdown.textContent = remaining;
+            }
+            if (remaining <= 0) {
+                stopRoundIntroCountdown();
+                showScreen('game');
+            }
+        }, 1000);
+    }
+
+    function stopRoundIntroCountdown() {
+        if (roundIntroTimer) {
+            clearInterval(roundIntroTimer);
+            roundIntroTimer = null;
+        }
+    }
+
     function showScreen(name) {
         screenLobby.classList.remove('active');
         if (screenScene) screenScene.classList.remove('active');
+        if (screenRoundIntro) screenRoundIntro.classList.remove('active');
         screenGame.classList.remove('active');
         if (screenBreak) screenBreak.classList.remove('active');
         screenResults.classList.remove('active');

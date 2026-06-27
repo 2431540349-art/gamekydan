@@ -22,6 +22,7 @@ TEAM_COUNT = 10
 TEAM_SIZE = 5
 MAX_PLAYERS_PER_ROOM = TEAM_COUNT * TEAM_SIZE
 INTRO_SCENE_SECONDS = 12
+ROUND_INTRO_SECONDS = 5
 
 DIFFICULTY_CONFIG = {
     'easy': {
@@ -50,11 +51,11 @@ TOURNAMENT_ROUND_CONFIG = {
     1: {
         'name': 'Vòng 1 — Loại sơ',
         'teams_in': 10,
-        'teams_advance': 5,
+        'teams_advance': 7,
         'question_count': 5,
         'time_per_question': 15,
         'break_seconds': 480,
-        'description': '10 đội tranh tài, chọn 5 đội đi tiếp',
+        'description': '10 đội tham gia, chọn 7 đội may mắn đi tiếp và 3 đội bị loại',
     },
     2: {
         'name': 'Vòng 2 — Bán kết',
@@ -627,9 +628,10 @@ def start_tournament_round(room_code, round_num):
 'tournament_mode': True,
             'round': round_num,
             'round_name': cfg['name'],
+            'round_intro_seconds': ROUND_INTRO_SECONDS if round_num == 1 else 0,
         }, to=room_code)
 
-        socketio.sleep(2.0)
+        socketio.sleep(ROUND_INTRO_SECONDS if round_num == 1 else 2.0)
         send_next_question(room_code)
     except Exception as e:
         socketio.emit('error', {'message': f"Lỗi bắt đầu vòng đấu: {str(e)}"}, to=room_code)

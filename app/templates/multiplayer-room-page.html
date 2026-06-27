@@ -114,6 +114,41 @@
             </div>
         </div>
     </div>
+
+    <!-- HOST DASHBOARD VIEW -->
+    <div id="host-dashboard" class="host-dashboard-container hidden">
+        <div class="card host-card mb-2">
+            <div class="host-header">
+                <h2>Bảng Điều Khiển Quản Trị Viên</h2>
+                <div class="host-status">Mã Phòng: <strong id="host-room-code">{{ room_code }}</strong></div>
+            </div>
+            
+            <!-- Current Question Display for Host -->
+            <div class="host-question-section mb-2">
+                <div class="host-section-title">Câu hỏi hiện tại</div>
+                <div class="host-question-box">
+                    <div class="question-article" id="host-q-article">Điều 1 - NĐ 13</div>
+                    <h3 class="question-text" id="host-q-text">Câu hỏi sẽ hiển thị tại đây</h3>
+                    <div class="host-correct-answer mt-1">
+                        <strong id="host-q-correct-answer">Đáp án đúng: A</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Team Progress -->
+            <div class="host-progress-section mb-2">
+                <div class="host-section-title">Tiến độ trả lời của các đội</div>
+                <div class="host-teams-grid" id="host-teams-progress">
+                    <!-- Will be dynamically populated by JS -->
+                </div>
+            </div>
+
+            <!-- Host Controls -->
+            <div class="host-controls">
+                <button id="btn-host-reset" class="btn btn-danger btn-block btn-lg">Dừng & Reset Trò Chơi</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- EXPLANATION POPUP -->

@@ -236,6 +236,8 @@ const resCorrect = document.getElementById('res-correct');
     let currentRound = 0;
     let currentTimeLimit = 20;
     let isEliminated = false;
+    let currentPlayers = [];
+    let currentAnswersProgress = [];
 
     const TOURNAMENT_ROUNDS = {
         1: { name: 'Vòng 1 — Loại sơ' },
@@ -270,14 +272,16 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('player_list_update', (players) => {
+            currentPlayers = players;
             updatePlayerList(players);
             updateLeaderboard(players);
             updateMyTeamState(players);
             
-            // Check if all players ready
+            // Check if all players ready (excluding host)
             if (window.GAME_CONFIG.isHost) {
-                const allReady = players.every(p => p.ready && p.team);
-                if (allReady && players.length > 0) {
+                const playersToCheck = players.filter(p => !p.is_host);
+                const allReady = playersToCheck.length > 0 && playersToCheck.every(p => p.ready && p.team);
+                if (allReady) {
                     btnStart.classList.remove('hidden');
                 } else {
                     btnStart.classList.add('hidden');
@@ -341,6 +345,13 @@ const resCorrect = document.getElementById('res-correct');
 
         socket.on('game_started', (data) => {
             showScreen('game');
+            if (window.GAME_CONFIG.isHost) {
+                document.querySelector('.game-layout').classList.add('hidden');
+                document.getElementById('host-dashboard').classList.remove('hidden');
+            } else {
+                document.querySelector('.game-layout').classList.remove('hidden');
+                document.getElementById('host-dashboard').classList.add('hidden');
+            }
             tournamentMode = Boolean(data.tournament_mode);
             if (data.round) {
                 currentRound = data.round;
@@ -368,7 +379,32 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('new_question', (data) => {
+            currentAnswersProgress = currentPlayers.filter(p => !p.is_host).map(p => ({
+                sid: p.sid,
+                name: p.username,
+                team: p.team,
+                answered: false
+            }));
+            
             displayQuestion(data);
+            
+            if (window.GAME_CONFIG.isHost) {
+                const hostQArticle = document.getElementById('host-q-article');
+                const hostQText = document.getElementById('host-q-text');
+                const hostQCorrect = document.getElementById('host-q-correct-answer');
+                
+                if (hostQArticle) hostQArticle.textContent = data.article || "NĐ 13/2023";
+                if (hostQText) hostQText.textContent = data.question;
+                
+                if (hostQCorrect && data.correct_answer && data.options) {
+                    const correctLetter = data.correct_answer.toUpperCase();
+                    const correctIdx = ['A', 'B', 'C', 'D'].indexOf(correctLetter);
+                    const correctText = data.options[correctIdx] || '';
+                    hostQCorrect.innerHTML = `🟢 Đáp án đúng: <strong>${correctLetter}. ${correctText}</strong>`;
+                }
+                
+                updateHostProgressDashboard();
+            }
         });
 
         socket.on('timer_tick', (timeLeft) => {
@@ -487,6 +523,31 @@ if (data.new_badges && data.new_badges.length > 0) {
             setTimeout(() => Confetti.burst(), 500);
         });
 
+        socket.on('answers_progress_update', (data) => {
+            currentAnswersProgress = data.progress || [];
+            if (window.GAME_CONFIG.isHost) {
+                updateHostProgressDashboard();
+            }
+        });
+
+        socket.on('game_reset', () => {
+            isReady = false;
+            hasAnswered = false;
+            isEliminated = false;
+            
+            if (btnReady) {
+                btnReady.textContent = "Sẵn sàng";
+                btnReady.className = "btn btn-primary btn-block btn-lg mt-2";
+                btnReady.disabled = !myTeam;
+            }
+            
+            if (expPopup) expPopup.classList.remove('show');
+            if (hintPopup) hintPopup.classList.add('hidden');
+            
+            showScreen('lobby');
+            showToast('Trò chơi đã được quản trị viên reset.', 'warning');
+        });
+
         socket.on('error', (data) => {
             const msg = typeof data === 'string' ? data : (data.message || 'Lỗi không xác định');
             showToast(msg, 'error');
@@ -522,6 +583,11 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             if (btnReady) {
                 btnReady.disabled = false;
             }
+        }
+
+        if (window.GAME_CONFIG.isHost) {
+            if (btnReady) btnReady.classList.add('hidden');
+            if (selectedTeamStatus) selectedTeamStatus.textContent = 'Bạn là Quản trị viên (Host)';
         }
 
         // Mode selector (Host only)
@@ -567,6 +633,7 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
                 teamSelector.classList.add('team-locked');
             }
             teamSelector.addEventListener('click', (e) => {
+                if (window.GAME_CONFIG.isHost) return;
                 const card = e.target.closest('.team-card');
                 if (!card || card.classList.contains('full') || teamLocked) return;
 
@@ -630,6 +697,16 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
             btnSkipBreak.addEventListener('click', () => {
                 SoundEffects.playClick();
                 socket.emit('skip_break');
+            });
+        }
+
+        const btnHostReset = document.getElementById('btn-host-reset');
+        if (btnHostReset) {
+            btnHostReset.addEventListener('click', () => {
+                if (confirm('Bạn có chắc chắn muốn dừng và reset lại trò chơi không? Tất cả điểm số sẽ được đặt lại về 0.')) {
+                    SoundEffects.playClick();
+                    socket.emit('reset_game');
+                }
             });
         }
     }
@@ -982,6 +1059,77 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         screenResults.classList.remove('active');
 
         document.getElementById(`screen-${name}`).classList.add('active');
+    }
+
+    function updateHostProgressDashboard() {
+        const progressContainer = document.getElementById('host-teams-progress');
+        if (!progressContainer) return;
+
+        progressContainer.innerHTML = '';
+
+        const teamsMap = new Map();
+        
+        for (let i = 1; i <= 10; i++) {
+            teamsMap.set(i, {
+                id: i,
+                score: 0,
+                members: [],
+                active: false
+            });
+        }
+
+        currentPlayers.forEach(p => {
+            if (p.is_host || !p.team) return;
+            const teamId = Number(p.team);
+            const team = teamsMap.get(teamId);
+            if (team) {
+                team.active = true;
+                team.score += p.score || 0;
+                
+                const progressEntry = currentAnswersProgress.find(ap => ap.sid === p.sid);
+                const hasAnswered = progressEntry ? progressEntry.answered : false;
+                
+                team.members.push({
+                    sid: p.sid,
+                    name: p.username,
+                    avatar: p.avatar,
+                    answered: hasAnswered
+                });
+            }
+        });
+
+        const activeTeams = [...teamsMap.values()].filter(t => t.active);
+        
+        if (activeTeams.length === 0) {
+            progressContainer.innerHTML = '<p class="spectator-notice">Chưa có đội nào tham gia.</p>';
+            return;
+        }
+
+        activeTeams.forEach(team => {
+            const allAnswered = team.members.every(m => m.answered);
+            const answeredCount = team.members.filter(m => m.answered).length;
+            const totalCount = team.members.length;
+
+            const card = document.createElement('div');
+            card.className = `host-team-progress-card ${allAnswered ? 'all-answered' : ''}`;
+            
+            let membersHTML = team.members.map(m => `
+                <span class="player-progress-dot ${m.answered ? 'answered' : ''}">
+                    ${m.avatar} ${m.name} ${m.answered ? '✅' : '⏳'}
+                </span>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="host-team-progress-header">
+                    <span class="host-team-name">Đội ${team.id} (${answeredCount}/${totalCount})</span>
+                    <span class="host-team-score">${team.score} điểm</span>
+                </div>
+                <div class="host-team-members-progress">
+                    ${membersHTML}
+                </div>
+            `;
+            progressContainer.appendChild(card);
+        });
     }
 
     // Start everything

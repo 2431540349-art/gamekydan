@@ -407,6 +407,9 @@ def on_toggle_ready(data):
         ready = bool(data.get('ready', False))
         with room_lock:
             room = rooms[room_code]
+            if room['host_sid'] == sid:
+                emit('error', {'message': 'Quản trị viên không cần/không thể sẵn sàng!'})
+                return
             if sid in room['players']:
                 is_host = (room['host_sid'] == sid)
                 if not room['players'][sid].get('team'):
@@ -433,6 +436,9 @@ def on_select_team(data):
 
         with room_lock:
             room = rooms[room_code]
+            if room['host_sid'] == sid:
+                emit('error', {'message': 'Quản trị viên không thể chọn đội!'})
+                return
             if room.get('started'):
                 emit('error', {'message': 'Không thể đổi đội khi ván đấu đã bắt đầu!'})
                 return
@@ -514,13 +520,14 @@ def on_start_game():
         if room['host_sid'] != sid:
             emit('error', {'message': 'Chỉ có trưởng phòng mới có thể bắt đầu game!'})
             return
-        if not room['players']:
-            emit('error', {'message': 'Phòng chưa có người chơi!'})
+        players_to_check = {k: v for k, v in room['players'].items() if k != room['host_sid']}
+        if not players_to_check:
+            emit('error', {'message': 'Phòng chưa có người chơi tham gia!'})
             return
-        if any(not p.get('team') for p in room['players'].values()):
+        if any(not p.get('team') for p in players_to_check.values()):
             emit('error', {'message': 'Tất cả người chơi cần chọn đội trước khi bắt đầu!'})
             return
-        if any(not p.get('is_ready') for p in room['players'].values()):
+        if any(not p.get('is_ready') for p in players_to_check.values()):
             emit('error', {'message': 'Tất cả người chơi cần sẵn sàng trước khi bắt đầu!'})
             return
 
@@ -1036,6 +1043,8 @@ def on_submit_answer(data):
         if not room_code:
             return
         room = rooms[room_code]
+        if room['host_sid'] == sid:
+            return
         p = room['players'].get(sid)
         if not p or not room['active_question']:
             return
@@ -1109,7 +1118,21 @@ game_id=room['game_id'],
             'article_name': q.article_name
         })
         
+        # Broadcast answers progress
         active_sids = get_active_player_sids(room)
+        progress = []
+        for s in active_sids:
+            player_info = room['players'].get(s)
+            if player_info:
+                progress.append({
+                    'sid': s,
+                    'name': player_info['name'],
+                    'team': player_info.get('team'),
+                    'answered': (s in room['player_answers_submitted'])
+                })
+        socketio.emit('answers_progress_update', {
+            'progress': progress
+        }, to=room_code)
         active_answered = [s for s in active_sids if s in room['player_answers_submitted']]
         if len(active_answered) == len(active_sids) and len(active_sids) > 0:
             if room.get('timer_thread'):
@@ -1126,6 +1149,8 @@ def on_use_lifeline(data):
         if not room_code:
             return
         room = rooms[room_code]
+        if room['host_sid'] == sid:
+            return
         p = room['players'].get(sid)
         if not p or not room['active_question']:
             return
@@ -1227,3 +1252,48 @@ def handle_player_departure(sid, room_code):
             }, to=room_code)
     except Exception as e:
         print("Error handling player departure:", e)
+
+@socketio.on('reset_game')
+def on_reset_game():
+    try:
+        sid = request.sid
+        room_code = get_room_by_sid(sid)
+        if not room_code:
+            return
+        with room_lock:
+            room = rooms[room_code]
+            if room['host_sid'] != sid:
+                emit('error', {'message': 'Chỉ có quản trị viên mới có thể dừng hoặc reset game!'})
+                return
+            
+            if room.get('timer_thread'):
+                room['timer_thread'].cancel()
+                room['timer_thread'] = None
+            
+            room['started'] = False
+            room['in_break'] = False
+            room['questions'] = []
+            room['current_index'] = 0
+            room['active_question'] = None
+            room['question_start_time'] = 0
+            room['player_answers_submitted'] = {}
+            room['timer_active'] = False
+            
+            for p in room['players'].values():
+                p['score'] = 0
+                p['streak'] = 0
+                p['best_streak'] = 0
+                p['articles_correct'] = set()
+                p['wrong_answers'] = 0
+                p['total_time'] = 0.0
+                p['used_lifelines'] = {'fifty_fifty': False, 'hint': False}
+                p['used_lifeline_on_this'] = False
+                p['is_ready'] = False
+            
+            if room.get('tournament_mode'):
+                init_tournament_room_state(room)
+        
+        socketio.emit('game_reset', to=room_code)
+        emit_room_state(room_code)
+    except Exception as e:
+        emit('error', {'message': f"Lỗi reset game: {str(e)}"})

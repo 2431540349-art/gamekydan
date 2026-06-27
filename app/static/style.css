@@ -2182,15 +2182,9 @@ body.cyber-auth .trust-meter strong {
 }
 
 .auth-tabs a {
-<<<<<<< HEAD
     background: rgba(249,250,251,0.92);
     border-color: rgba(20,184,166,0.24);
     color: #475569;
-=======
-    background: rgba(248,251,255,0.9);
-    border-color: rgba(15,98,254,0.16);
-color: var(--text-secondary);
->>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
 }
 
 .auth-tabs a.active {
@@ -3187,13 +3181,9 @@ body.compact-mobile .home-hero {
     padding-bottom: 0.9rem;
 }
 
-<<<<<<< HEAD
-
-=======
 body.compact-mobile .home-hero + .security-footer {
     display: none;
 }
->>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
 body.compact-mobile .home-hero .hero-actions {
     gap: 0.75rem;
 }
@@ -3239,7 +3229,6 @@ body.compact-mobile .navbar {
     padding: 0 0.8rem;
 }
 
-<<<<<<< HEAD
 /* === AUTH BRIGHT CYBER OVERRIDES === */
 body.cyber-auth {
     background: linear-gradient(180deg, #f7fbff 0%, #ecf8ff 45%, #f3fbff 100%);
@@ -3373,7 +3362,7 @@ body.cyber-auth .radar {
 body.cyber-auth .radar-sweep {
     background: conic-gradient(from 220deg, rgba(15,98,254,0.28), transparent 52deg);
 }
-=======
+
 /* ===== TOURNAMENT MODE ===== */
 .game-mode-section {
     margin-top: 1rem;
@@ -3624,4 +3613,104 @@ font-variant-numeric: tabular-nums;
         grid-template-columns: 1fr;
     }
 }
->>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
+
+/* Host Dashboard Styles */
+.host-dashboard-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+.host-card {
+    padding: 2rem;
+    border: 2px solid var(--primary);
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+.host-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+.host-status {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.host-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+.host-question-box {
+    background: rgba(26, 86, 219, 0.05);
+    border: 1px solid rgba(26, 86, 219, 0.15);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.host-correct-answer {
+    font-size: 0.95rem;
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.08);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+}
+.host-teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.host-team-progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+.host-team-progress-card.all-answered {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.03);
+}
+.host-team-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.host-team-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+.host-team-score {
+    font-weight: 800;
+    color: var(--primary);
+}
+.host-team-members-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+.player-progress-dot {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--text-muted);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.player-progress-dot.answered {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}

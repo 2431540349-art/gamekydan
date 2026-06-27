@@ -21,6 +21,7 @@ rooms = {}
 TEAM_COUNT = 10
 TEAM_SIZE = 5
 MAX_PLAYERS_PER_ROOM = TEAM_COUNT * TEAM_SIZE
+INTRO_SCENE_SECONDS = 12
 
 DIFFICULTY_CONFIG = {
     'easy': {
@@ -524,20 +525,21 @@ def on_start_game():
             emit('error', {'message': 'Tất cả người chơi cần sẵn sàng trước khi bắt đầu!'})
             return
 
-        room['started'] = True
-        room['game_id'] = secrets.token_hex(8)
-        # Notify clients to show intro scene before questions start
-        try:
-            socketio.emit('show_scene', {'url': f'/game/{room_code}/scene'}, to=room_code)
-        except Exception:
-            pass
-
         if room.get('tournament_mode', True):
             teams_present = get_teams_with_players(room)
             if len(teams_present) < 1:
                 emit('error', {'message': 'Giải đấu cần ít nhất 2 đội có người chơi!'})
-                room['started'] = False
                 return
+
+        room['started'] = True
+        room['game_id'] = secrets.token_hex(8)
+        socketio.emit('show_scene', {
+            'url': f'/game/{room_code}/scene',
+            'seconds': INTRO_SCENE_SECONDS
+        }, to=room_code)
+        socketio.sleep(INTRO_SCENE_SECONDS)
+
+        if room.get('tournament_mode', True):
             init_tournament_room_state(room)
             room['active_teams'] = teams_present
             start_tournament_round(room_code, 1)

@@ -171,9 +171,11 @@ let active = false;
 
     // Basic UI Elements
     const screenLobby = document.getElementById('screen-lobby');
+    const screenScene = document.getElementById('screen-scene');
     const screenGame = document.getElementById('screen-game');
     const screenBreak = document.getElementById('screen-break');
     const screenResults = document.getElementById('screen-results');
+    const sceneCountdown = document.getElementById('scene-countdown');
     
     const lobbyPlayers = document.getElementById('lobby-players');
     const playerCount = document.getElementById('player-count');
@@ -236,6 +238,7 @@ const resCorrect = document.getElementById('res-correct');
     let currentRound = 0;
     let currentTimeLimit = 20;
     let isEliminated = false;
+    let sceneCountdownTimer = null;
 
     const TOURNAMENT_ROUNDS = {
         1: { name: 'Vòng 1 — Loại sơ' },
@@ -339,7 +342,12 @@ const resCorrect = document.getElementById('res-correct');
             setTimeout(() => Confetti.burst(), 1000);
         });
 
+        socket.on('show_scene', (data) => {
+            showSceneIntro(data);
+        });
+
         socket.on('game_started', (data) => {
+            stopSceneCountdown();
             showScreen('game');
             tournamentMode = Boolean(data.tournament_mode);
             if (data.round) {
@@ -490,6 +498,10 @@ if (data.new_badges && data.new_badges.length > 0) {
         socket.on('error', (data) => {
             const msg = typeof data === 'string' ? data : (data.message || 'Lỗi không xác định');
             showToast(msg, 'error');
+            if (btnStart) {
+                btnStart.disabled = false;
+                btnStart.textContent = 'Bắt đầu Game';
+            }
         });
     }
 
@@ -579,6 +591,8 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
         if (btnStart) {
             btnStart.addEventListener('click', () => {
                 SoundEffects.playClick();
+                btnStart.disabled = true;
+                btnStart.textContent = 'Đang khởi động...';
                 socket.emit('start_game');
             });
         }
@@ -975,8 +989,37 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         badgeModal.classList.add('show');
     }
 
+    function showSceneIntro(data = {}) {
+        const duration = Number(data.seconds || 12);
+        let remaining = duration;
+
+        stopSceneCountdown();
+        if (sceneCountdown) {
+            sceneCountdown.textContent = remaining;
+        }
+        showScreen('scene');
+
+        sceneCountdownTimer = setInterval(() => {
+            remaining = Math.max(0, remaining - 1);
+            if (sceneCountdown) {
+                sceneCountdown.textContent = remaining;
+            }
+            if (remaining <= 0) {
+                stopSceneCountdown();
+            }
+        }, 1000);
+    }
+
+    function stopSceneCountdown() {
+        if (sceneCountdownTimer) {
+            clearInterval(sceneCountdownTimer);
+            sceneCountdownTimer = null;
+        }
+    }
+
     function showScreen(name) {
         screenLobby.classList.remove('active');
+        if (screenScene) screenScene.classList.remove('active');
         screenGame.classList.remove('active');
         if (screenBreak) screenBreak.classList.remove('active');
         screenResults.classList.remove('active');

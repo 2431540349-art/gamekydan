@@ -2193,6 +2193,125 @@ color: var(--text-secondary);
 >>>>>>> fb8b8d7 (Lưu thay đổi của tôi)
 }
 
+/* === SCENE BRIEFING === */
+.scene-briefing-container {
+    min-height: calc((var(--app-vh, 1vh) * 100) - 72px);
+    padding: 1.25rem;
+    place-items: center;
+}
+
+.scene-briefing-container.active {
+    display: grid;
+}
+
+.scene-briefing-panel {
+    width: min(980px, 100%);
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    border: 1px solid rgba(20, 184, 166, 0.22);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(15, 98, 254, 0.08), rgba(20, 184, 166, 0.08)),
+        rgba(255, 255, 255, 0.94);
+    box-shadow: 0 24px 80px rgba(15, 98, 254, 0.12);
+}
+
+.scene-kicker {
+    color: #0f62fe;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.scene-briefing-panel h1 {
+    color: #0f172a;
+    font-size: clamp(1.7rem, 4vw, 3rem);
+    line-height: 1.1;
+    margin-bottom: 1.4rem;
+}
+
+.scene-character-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.scene-character-card {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    min-height: 132px;
+    padding: 1rem;
+    border: 1px solid rgba(15, 98, 254, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.scene-character-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    border-radius: 50%;
+    background: rgba(20, 184, 166, 0.12);
+    font-size: 1.35rem;
+}
+
+.scene-character-card h2 {
+    font-size: 1rem;
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+    color: #0f172a;
+}
+
+.scene-character-card p {
+    color: #475569;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.scene-countdown {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    color: #475569;
+    font-weight: 700;
+}
+
+.scene-countdown strong {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0f62fe 0%, #14b8a6 100%);
+    color: #fff;
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+    .scene-briefing-container {
+        padding: 0.75rem;
+    }
+
+    .scene-character-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .scene-character-card {
+        min-height: auto;
+    }
+
+    .scene-countdown {
+        justify-content: space-between;
+    }
+}
+
 .auth-tabs a.active {
     color: #0f766e;
     border-color: #0f766e;

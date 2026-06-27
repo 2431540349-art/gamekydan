@@ -1,29 +1,68 @@
 {% extends "layout.html" %}
 
-{% block title %}Đăng nhập - DataGuard VN{% endblock %}
+{% block title %}Cyber Shield - Đăng nhập{% endblock %}
+{% block body_class %}cyber-auth{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="card auth-card card-glass">
-        <h1>Đăng nhập</h1>
-        
-        <form action="{{ url_for('main.auth.login') }}" method="POST">
-            <div class="input-group">
-                <label for="username">Tên đăng nhập</label>
-                <input type="text" id="username" name="username" class="input-field" required autofocus>
+<section class="cyber-auth-screen">
+    <div class="cyber-auth-grid">
+        <div class="cyber-card auth-card">
+            <div class="cyber-card-title">
+                <h1>CYBER SHIELD</h1>
+                <p>Hệ thống xác thực nhân viên SOC</p>
             </div>
-            
-            <div class="input-group">
-                <label for="password">Mật khẩu</label>
-                <input type="password" id="password" name="password" class="input-field" required>
+
+            <div class="auth-tabs" aria-label="Chọn chế độ">
+                <a href="/login" class="active">Đăng nhập</a>
+                <a href="/register">Đăng ký</a>
             </div>
-            
-            <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">Đăng nhập</button>
-        </form>
-        
-        <p class="text-center mt-2" style="font-size: 0.9rem; color: var(--text-secondary);">
-            Chưa có tài khoản? <a href="/register" style="color: var(--primary); font-weight: 600; text-decoration: none;">Đăng ký ngay</a>
-        </p>
+
+            <form action="{{ url_for('main.auth.login') }}" method="POST" class="cyber-form">
+                <div class="input-group">
+                    <label for="username">EMAIL</label>
+                    <input type="text" id="username" name="username" class="input-field" placeholder="email@example.com" required autofocus>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">MẬT KHẨU</label>
+                    <input type="password" id="password" name="password" class="input-field" placeholder="Tối thiểu 6 ký tự" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
+            </form>
+
+            <a href="/" class="guest-link">Chơi không cần tài khoản →</a>
+        </div>
+
+        <aside class="cyber-card cyber-status-panel" aria-label="Trung tâm phản ứng khẩn cấp">
+            <p class="panel-kicker"><span></span>TRUNG TÂM PHẢN ỨNG KHẨN CẤP</p>
+
+            <div class="radar">
+                <span class="radar-sweep"></span>
+                <i class="dot dot-1"></i>
+                <i class="dot dot-2"></i>
+                <i class="dot dot-3"></i>
+            </div>
+
+            <div class="panel-divider"></div>
+
+            <div class="signal-stats">
+                <div>
+                    <strong>ANM 2025</strong>
+                    <span>Luật điều chỉnh</span>
+                </div>
+                <div>
+                    <strong>100 ms</strong>
+                    <span>Phản ứng trung bình</span>
+                </div>
+            </div>
+
+            <div class="terminal-log">
+                <p>&gt; GHOST_VN detected on Port 443</p>
+                <p>&gt; Defending firewalls initialized</p>
+                <p>&gt; Shield capacity: 100%</p>
+            </div>
+        </aside>
     </div>
-</div>
+</section>
 {% endblock %}

@@ -29,14 +29,22 @@
     {% block head %}{% endblock %}
 </head>
 <body
+    class="{% block body_class %}{% endblock %}"
     data-user-id="{% if current_user.is_authenticated %}{{ current_user.id }}{% endif %}"
     data-username="{% if current_user.is_authenticated %}{{ current_user.username }}{% endif %}"
 >
     <header class="navbar">
         <div class="navbar-inner">
             <a href="/" class="logo">
-                <span class="logo-icon">🛡️</span> DataGuard VN
+                <span class="logo-icon"></span>
+                <span class="brand-main">DataGuard VN</span>
+                <span class="brand-auth">CYBER SHIELD</span>
             </a>
+
+            <div class="cyber-header-tags" aria-hidden="true">
+                <span>Chuyên viên: <strong>Long</strong></span>
+                <span>#AUTH</span>
+            </div>
 
             <button class="mobile-menu-btn" type="button" aria-label="Mở menu" aria-expanded="false" aria-controls="site-nav">
                 <span></span>
@@ -57,6 +65,18 @@
                     <a href="/register" class="btn-primary btn-sm">Đăng ký</a>
                 {% endif %}
             </nav>
+
+            <div class="cyber-hud" aria-hidden="true">
+                <div class="trust-meter">
+                    <span>CHỈ SỐ TÍN NHIỆM</span>
+                    <div><i></i></div>
+                    <strong>60</strong>
+                </div>
+                <div class="hud-chip">☆ 5 TP</div>
+                <div class="hud-control">Ⅱ</div>
+                <div class="music-meter"><span>♫</span><i></i></div>
+                <div class="hud-speaker">◔</div>
+            </div>
         </div>
     </header>
 

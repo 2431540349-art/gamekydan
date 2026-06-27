@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block title %}Giới thiệu nhân vật - LAW{% endblock %}
+
+{% block content %}
+<section class="scene-intro" style="max-width:900px;margin:2rem auto;padding:1rem;">
+    <div class="card" style="padding:1.25rem;">
+        <h1 style="font-size:1.4rem;margin-bottom:0.5rem;">NHÂN VẬT &amp; BỐI CẢNH</h1>
+        <p style="color:var(--text-secondary);margin-bottom:1rem;">Dưới đây là các nhân vật liên quan và bối cảnh tình huống trong trò chơi.</p>
+
+        <div class="characters-list" style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="char-item card" style="padding:0.9rem;display:flex;gap:0.75rem;align-items:flex-start;">
+                <div style="font-size:2rem">🛡️</div>
+                <div>
+                    <div style="font-weight:800">Vũ Quốc Hưng (Luật sư DIMAC)</div>
+                    <div style="color:var(--text-secondary);">Chuyên gia pháp lý "thép", người giám sát tuân thủ.</div>
+                </div>
+            </div>
+
+            <div class="char-item card" style="padding:0.9rem;display:flex;gap:0.75rem;align-items:flex-start;">
+                <div style="font-size:2rem">👔</div>
+                <div>
+                    <div style="font-weight:800">Lê Mạnh Hùng (Giám đốc Công ty A & B)</div>
+                    <div style="color:var(--text-secondary);">Đang chịu áp lực lưu trữ dữ liệu tại Việt Nam và chuyển dữ liệu sang Nhật.</div>
+                </div>
+            </div>
+
+            <div class="char-item card" style="padding:0.9rem;display:flex;gap:0.75rem;align-items:flex-start;">
+                <div style="font-size:2rem">💻</div>
+                <div>
+                    <div style="font-weight:800">Nguyễn Thái Sơn (Chuyên gia IT - Anh & Em)</div>
+                    <div style="color:var(--text-secondary);">Người trực tiếp triển khai giải pháp kỹ thuật Smooth File, Mail Defender.</div>
+                </div>
+            </div>
+
+            <div class="char-item card" style="padding:0.9rem;display:flex;gap:0.75rem;align-items:flex-start;">
+                <div style="font-size:2rem">😟</div>
+                <div>
+                    <div style="font-weight:800">Hồ Ngọc Thanh (Nạn nhân)</div>
+                    <div style="color:var(--text-secondary);">Khách hàng bị lộ thông tin cá nhân và bị lừa đảo Deepfake.</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
+            <a href="/game/{{ room_code }}" class="btn btn-outline">Quay lại phòng</a>
+            <a id="btn-continue" href="/game/{{ room_code }}" class="btn btn-primary">Tiến tới phòng</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="game-config">
+{
+    "roomCode": "{{ room_code }}",
+    "playerName": {{ player_name|tojson }},
+    "playerTeam": {{ player_team|tojson }}
+}
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const cfgEl = document.getElementById('game-config');
+        const cfg = cfgEl ? JSON.parse(cfgEl.textContent || '{}') : {};
+        const socket = io();
+        socket.on('connect', () => {
+            socket.emit('join_room', { room_code: cfg.roomCode, avatar: '👤', name: cfg.playerName, team: cfg.playerTeam });
+        });
+        socket.on('show_scene', (data) => {
+            // already on scene
+        });
+        socket.on('game_started', () => {
+            // move to main game room page when server signals game start
+            window.location.href = `/game/${cfg.roomCode}`;
+        });
+    });
+</script>
+{% endblock %}

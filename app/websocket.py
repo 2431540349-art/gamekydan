@@ -526,6 +526,11 @@ def on_start_game():
 
         room['started'] = True
         room['game_id'] = secrets.token_hex(8)
+        # Notify clients to show intro scene before questions start
+        try:
+            socketio.emit('show_scene', {'url': f'/game/{room_code}/scene'}, to=room_code)
+        except Exception:
+            pass
 
         if room.get('tournament_mode', True):
             teams_present = get_teams_with_players(room)

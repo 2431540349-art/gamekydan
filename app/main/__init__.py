@@ -225,6 +225,18 @@ def game_room(room_id):
     )
 
 
+@pages.route('/game/<room_id>/scene')
+def scene_intro(room_id):
+    from app.websocket import rooms
+    if room_id not in rooms:
+        return abort(404)
+    player_name = request.args.get("name") or session.get("guest_player_name") or (
+        current_user.username if current_user.is_authenticated else "Người chơi"
+    )
+    player_team = session.get("guest_player_team")
+    return render_template('scene_intro.html', room_code=room_id, player_name=player_name, player_team=player_team)
+
+
 @pages.route("/profile")
 @login_required
 def profile():

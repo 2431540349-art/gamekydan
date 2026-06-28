@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}{{ super() }} - Singleplayer{% endblock %}
+{% block title %}Chơi Solo - LAW{% endblock %}
 {% block scripts %}
 <script src="/static/scripts/solo.js"></script>
 {% endblock %}
@@ -7,17 +7,16 @@
 <div class="lg:container mx-auto px-4 flex flex-col justify-between md:flex-row mb-6">
   {% if not current_user.is_authenticated %}
   <div class="text-right w-full">
-    <p class="text-xl font-semibold mb-2">looks like you are not logged in</p>
-    <p>To save your progress please <a href="/login" class="text-blue-500 hover:text-blue-700 font-bold">login</a> or <a
-        href="/register" class="text-blue-500 hover:text-blue-700 font-bold">create an acount</a> in less than a
-      minute</p>
+    <p class="text-xl font-semibold mb-2">Bạn chưa đăng nhập</p>
+    <p>Đăng nhập để lưu tiến trình: <a href="/login" class="text-blue-500 hover:text-blue-700 font-bold">Đăng nhập</a> hoặc <a
+        href="/register" class="text-blue-500 hover:text-blue-700 font-bold">Đăng ký</a></p>
   </div>
   {% endif %}
 </div>
 <div class="lg:container mx-auto px-4 flex flex-wrap md:h-[60vh] md:flex-nowrap">
   <div id="arena"
     class="w-full md:w-auto flex-grow border-b-2 md:border-r-2 md:border-b-0 border-red-500 my-4 md:my-0 p-4">
-    <div class="{% if not request.args.c %}hidden{% endif %}">
+    <div id="question-panel" class="{% if categories and not request.args.c %}hidden{% endif %}">
       <div class="flex justify-between content-center">
         <div class="flex space-x-2">
           <svg fill="#feb602" class="w-6 h-6" viewBox="0 0 24 24">
@@ -34,11 +33,18 @@
       <div id="question-answers" class="solo-answers-grid mt-6">
       </div>
     </div>
-    {% if not request.args.c %}
+    {% if categories and not request.args.c %}
     <div id="no-category-warn" class="flex justify-center py-12">
       <p class="h-16 py-1 text-3xl text-blue-700 text-center">
-        Please select a category to start playing
+        Chọn chủ đề bên phải để bắt đầu
       </p>
+    </div>
+    {% elif not categories %}
+    <div id="no-category-warn" class="flex justify-center py-12">
+      <p class="h-16 py-1 text-xl text-blue-700 text-center">
+        Tất cả câu hỏi Nghị định 13/2023 — bấm bắt đầu
+      </p>
+      <button id="start-solo-all" class="btn btn-primary btn-lg mt-4 mx-auto block">Bắt đầu chơi</button>
     </div>
     {% endif %}
   </div>

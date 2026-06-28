@@ -1,0 +1,257 @@
+{% extends "layout.html" %}
+
+{% block title %}Quy tắc Game - LAW Quiz{% endblock %}
+
+{% block content %}
+<div class="container-page">
+    <div class="rules-container">
+        <h1 class="page-title">📋 Quy tắc Game</h1>
+        
+        <div class="rules-content">
+            <section class="rule-section">
+                <h2>🎮 Cách chơi</h2>
+                <div class="rule-details">
+                    <p><strong>Mục tiêu:</strong> Trả lời đúng các câu hỏi về pháp luật Việt Nam để đạt điểm cao nhất.</p>
+                    <ul>
+                        <li>Mỗi câu hỏi có 4 phương án trả lời (A, B, C, D)</li>
+                        <li>Bạn có <strong>30 giây</strong> để trả lời mỗi câu hỏi</li>
+                        <li>Chỉ được chọn <strong>1 phương án</strong> duy nhất</li>
+                        <li>Không thể quay lại câu hỏi trước đó</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2>⭐ Hệ thống điểm</h2>
+                <div class="rule-details">
+                    <div class="score-table">
+                        <div class="score-row header">
+                            <span class="score-label">Kết quả</span>
+                            <span class="score-value">Điểm</span>
+                        </div>
+                        <div class="score-row correct">
+                            <span class="score-label">✓ Trả lời đúng</span>
+                            <span class="score-value">+10 điểm</span>
+                        </div>
+                        <div class="score-row incorrect">
+                            <span class="score-label">✗ Trả lời sai</span>
+                            <span class="score-value">-2 điểm</span>
+                        </div>
+                        <div class="score-row timeout">
+                            <span class="score-label">⏱ Hết giờ</span>
+                            <span class="score-value">-1 điểm</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2>🏆 Chế độ chơi</h2>
+                <div class="rule-details">
+                    <h3>Solo (Chơi một mình)</h3>
+                    <p>Chơi riêng lẻ để rèn luyện kiến thức. Kết quả của bạn sẽ được lưu vào hồ sơ cá nhân.</p>
+                    
+                    <h3>Multiplayer (Chơi với bạn)</h3>
+                    <p>Chơi cùng các bạn khác trong cùng một phòng. Những ai có điểm cao nhất sẽ nằm trên bảng xếp hạng.</p>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2>💡 Mẹo chơi</h2>
+                <div class="rule-details">
+                    <ul>
+                        <li>📖 Hãy tìm hiểu kỹ về <strong>Luật An ninh mạng 2025</strong> và <strong>Luật Bảo vệ dữ liệu cá nhân 2025</strong></li>
+                        <li>⏲ Không dùng quá nhiều thời gian cho một câu - hãy trả lời nhanh và chính xác</li>
+                        <li>📝 Ghi chú lại những câu hỏi mà bạn thường sai để học lại</li>
+                        <li>🎯 Tập trung vào các lĩnh vực yếu của bạn - kiểm tra biểu đồ thống kê trong hồ sơ</li>
+                        <li>🔄 Chơi nhiều lần để tăng độ quen thuộc với các câu hỏi</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2>⚙️ Quy tắc chung</h2>
+                <div class="rule-details">
+                    <ul>
+                        <li>Mỗi người chơi phải tuân thủ những quy tắc trên</li>
+                        <li>Không được gian lận hoặc sử dụng những công cụ bên ngoài để tìm đáp án</li>
+                        <li>Hành vi gian lận sẽ dẫn đến bị khóa tài khoản</li>
+                        <li>Tôn trọng các người chơi khác - không spam hoặc bình luận không phù hợp</li>
+                        <li>Quản trị viên có quyền đình chỉ tài khoản vi phạm quy tắc</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="rule-section info-banner">
+                <h2>❓ Có câu hỏi?</h2>
+                <p>Nếu bạn có bất kỳ câu hỏi nào về luật pháp hoặc cách chơi game, hãy truy cập mục <strong>"Tài liệu tham khảo"</strong> trong menu để xem thêm thông tin chi tiết.</p>
+            </section>
+        </div>
+
+        <div class="rules-footer">
+            <a href="/" class="btn btn-primary">← Quay lại trang chủ</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.container-page {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.rules-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    margin: 2rem 2rem 1.5rem;
+    color: var(--primary);
+    font-weight: 900;
+}
+
+.rules-content {
+    padding: 0 2rem 2rem;
+}
+
+.rule-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: rgba(26, 86, 219, 0.03);
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius-md);
+}
+
+.rule-section h2 {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.rule-section h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 1rem 0 0.5rem;
+    font-weight: 600;
+}
+
+.rule-details p {
+    margin: 0.75rem 0;
+    line-height: 1.8;
+    color: var(--text-secondary);
+}
+
+.rule-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.rule-details li {
+    padding: 0.6rem 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(26, 86, 219, 0.1);
+}
+
+.rule-details li:last-child {
+    border-bottom: none;
+}
+
+.score-table {
+    background: white;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 2px solid var(--primary-light);
+    margin: 1rem 0;
+}
+
+.score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(26, 86, 219, 0.1);
+}
+
+.score-row:last-child {
+    border-bottom: none;
+}
+
+.score-row.header {
+    background: var(--gradient-primary);
+    color: white;
+    font-weight: 700;
+    border-bottom: 2px solid var(--primary);
+}
+
+.score-row.correct {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.score-row.incorrect {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.score-row.timeout {
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.score-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.score-value {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.info-banner {
+    background: rgba(245, 158, 11, 0.08);
+    border-left-color: var(--accent);
+}
+
+.info-banner h2 {
+    color: var(--accent);
+}
+
+.rules-footer {
+    padding: 2rem;
+    text-align: center;
+    background: rgba(26, 86, 219, 0.05);
+    border-top: 1px solid var(--card-border);
+}
+
+@media (max-width: 640px) {
+    .page-title {
+        font-size: 1.8rem;
+        margin: 1.5rem 1.5rem 1rem;
+    }
+
+    .rules-content {
+        padding: 0 1rem 1.5rem;
+    }
+
+    .rule-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+    }
+
+    .rule-section h2 {
+        font-size: 1.2rem;
+    }
+
+    .score-row {
+        padding: 0.8rem 1rem;
+    }
+}
+</style>
+{% endblock %}

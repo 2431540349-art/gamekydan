@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<rect width="800" height="600" fill="#e2e8f0"/>
+<rect x="200" y="60" width="400" height="480" rx="10" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+<rect x="200" y="60" width="400" height="36" fill="#f1f5f9" stroke="#cbd5e1"/>
+<text x="220" y="84" font-family="Segoe UI,Arial" font-size="13" fill="#64748b">http://</text>
+<text x="280" y="84" font-family="Segoe UI,Arial" font-size="13" fill="#dc2626">secvire-bank-login.com</text>
+<text x="400" y="84" font-family="Segoe UI,Arial" font-size="13" fill="#64748b">/signin</text>
+<circle cx="400" cy="160" r="30" fill="#1d4ed8"/><text x="400" y="168" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">B</text>
+<text x="400" y="220" text-anchor="middle" font-family="Segoe UI,Arial" font-size="20" fill="#0f172a" font-weight="700">Đăng nhập Internet Banking</text>
+<rect x="260" y="260" width="280" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+<rect x="260" y="320" width="280" height="40" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+<rect x="260" y="390" width="280" height="44" rx="6" fill="#1d4ed8"/><text x="400" y="418" text-anchor="middle" fill="#fff" font-size="14">Đăng nhập</text>
+</svg>

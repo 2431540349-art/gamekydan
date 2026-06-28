@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "title": "SOC War Room — Chuỗi tấn công đa vector",
+    "story": "Trung tâm SOC ghi nhận đồng thời nhiều dấu hiệu tấn công lên hệ thống xử lý dữ liệu cá nhân. Hai đội chung kết phải phân tích cùng một màn hình giám sát, 5 thành viên trả lời lần lượt — đội hoàn thành nhanh và chính xác hơn sẽ thắng.",
+    "background": "02:30 sáng — cảnh báo CRITICAL từ SIEM, firewall, email gateway và NIDS cùng kích hoạt.",
+    "difficulty": "hard",
+    "image": "r4_soc_warroom.svg",
+    "missions": [
+      {
+        "id": 401,
+        "player_order": 1,
+        "type": "click",
+        "question": "Thành viên 1: Chỉ ra cảnh báo email phishing lừa đảo nhân viên cung cấp mật khẩu VPN.",
+        "image": "r4_soc_warroom.svg",
+        "answer": { "x": 196, "y": 122, "radius": 50 },
+        "hint": "Xem panel góc trên bên trái — mục cảnh báo màu cam về email.",
+        "explanation": "Email gateway phát hiện 847 email giả mạo IT Helpdesk yêu cầu reset mật khẩu — vector phishing ban đầu.",
+        "score": 100,
+        "time": 15
+      },
+      {
+        "id": 402,
+        "player_order": 2,
+        "type": "click",
+        "question": "Thành viên 2: Chỉ ra biểu đồ thể hiện tấn công brute force vào cổng đăng nhập.",
+        "image": "r4_soc_warroom.svg",
+        "answer": { "x": 530, "y": 145, "radius": 50 },
+        "hint": "Panel giữa phía trên — biểu đồ cột đỏ.",
+        "explanation": "2.340 lần thử đăng nhập thất bại trong 10 phút từ 12 IP botnet — giai đoạn leo thang sau phishing.",
+        "score": 100,
+        "time": 15
+      },
+      {
+        "id": 403,
+        "player_order": 3,
+        "type": "click",
+        "question": "Thành viên 3: Chỉ ra luật tường lửa bất thường vừa được thêm tự động.",
+        "image": "r4_soc_warroom.svg",
+        "answer": { "x": 705, "y": 325, "radius": 50 },
+        "hint": "Panel phía trên bên phải — bảng firewall rules.",
+        "explanation": "Rule ALLOW inbound 4444/TCP từ ANY được thêm lúc 02:28 — dấu hiệu attacker mở backdoor sau khi chiếm quyền.",
+        "score": 100,
+        "time": 15
+      },
+      {
+        "id": 404,
+        "player_order": 4,
+        "type": "click",
+        "question": "Thành viên 4: Chỉ ra đỉnh lưu lượng exfiltration dữ liệu ra ngoài.",
+        "image": "r4_soc_warroom.svg",
+        "answer": { "x": 340, "y": 200, "radius": 55 },
+        "hint": "Biểu đồ đường lớn phía dưới bên trái.",
+        "explanation": "Outbound traffic spike 4.2 GB trong 3 phút tới IP nước ngoài — dữ liệu cá nhân có thể đang bị rò rỉ.",
+        "score": 100,
+        "time": 15
+      },
+      {
+        "id": 405,
+        "player_order": 5,
+        "type": "click",
+        "question": "Thành viên 5: Chỉ ra endpoint bị compromise trên bản đồ mạng.",
+        "image": "r4_soc_warroom.svg",
+        "answer": { "x": 580, "y": 420, "radius": 50 },
+        "hint": "Sơ đồ mạng góc dưới bên phải — nút màu đỏ nhấp nháy.",
+        "explanation": "Server DB-PROD-02 có kết nối bất thường tới C2 server — cần cô lập ngay theo quy trình ứng cứu sự cố.",
+        "score": 100,
+        "time": 15
+      }
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<rect width="800" height="600" fill="#0f172a"/>
+<text x="40" y="45" font-family="Consolas,monospace" font-size="16" fill="#38bdf8">auth.log — SSH / Web Login Monitor</text>
+<rect x="40" y="60" width="720" height="500" fill="#1e293b" stroke="#334155"/>
+<text x="60" y="95" font-family="Consolas,monospace" font-size="12" fill="#94a3b8">2026-06-28 02:10:01 SUCCESS admin@192.168.1.5</text>
+<text x="60" y="120" font-family="Consolas,monospace" font-size="12" fill="#94a3b8">2026-06-28 02:10:15 SUCCESS user01@192.168.1.12</text>
+<rect x="50" y="280" width="700" height="130" fill="#450a0a" opacity="0.35"/>
+<text x="60" y="305" font-family="Consolas,monospace" font-size="12" fill="#fca5a5">2026-06-28 02:11:02 FAILED root@203.0.113.44</text>
+<text x="60" y="325" font-family="Consolas,monospace" font-size="12" fill="#fca5a5">2026-06-28 02:11:03 FAILED admin@203.0.113.44</text>
+<text x="60" y="345" font-family="Consolas,monospace" font-size="12" fill="#fca5a5">2026-06-28 02:11:03 FAILED user@203.0.113.44</text>
+<text x="60" y="365" font-family="Consolas,monospace" font-size="12" fill="#fca5a5">2026-06-28 02:11:04 FAILED test@203.0.113.44</text>
+<text x="60" y="385" font-family="Consolas,monospace" font-size="12" fill="#fca5a5">... 847 FAILED attempts in 2 min — IP 203.0.113.44</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<rect width="800" height="600" fill="#f8fafc"/>
+<text x="40" y="45" font-family="Segoe UI,Arial" font-size="18" fill="#1e293b" font-weight="700">Network Traffic — Last 24 Hours (Mbps)</text>
+<line x1="80" y1="480" x2="740" y2="480" stroke="#cbd5e1" stroke-width="2"/>
+<line x1="80" y1="80" x2="80" y2="480" stroke="#cbd5e1" stroke-width="2"/>
+<polyline points="100,420 180,400 260,410 340,395 420,405 500,390 540,380 580,175 620,420 700,400" fill="none" stroke="#3b82f6" stroke-width="3"/>
+<circle cx="585" cy="175" r="8" fill="#ef4444" opacity="0.9"/>
+<text x="80" y="520" font-size="11" fill="#64748b">00:00</text><text x="560" y="520" font-size="11" fill="#64748b">02:14</text>
+</svg>

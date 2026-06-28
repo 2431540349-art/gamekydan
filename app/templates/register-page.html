@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}Đăng ký{% endblock %}
+
+{% block content %}
+<section class="home-hero" style="max-width: 420px; margin: 2rem auto;">
+    <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Đăng ký tài khoản</h1>
+    <form action="{{ url_for('main.auth.register') }}" method="post" class="hero-room-form">
+        <div class="input-group">
+            <label for="username">Tên đăng nhập</label>
+            <input id="username" name="username" class="input-field" type="text" required>
+        </div>
+        <div class="input-group">
+            <label for="password">Mật khẩu</label>
+            <input id="password" name="password" class="input-field" type="password" required minlength="4">
+        </div>
+        <div class="input-group">
+            <label for="confirm_password">Xác nhận mật khẩu</label>
+            <input id="confirm_password" name="confirm_password" class="input-field" type="password" required minlength="4">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">Đăng ký</button>
+    </form>
+    <p style="margin-top: 1rem;">
+        Đã có tài khoản? <a href="{{ url_for('main.auth.login_page') }}">Đăng nhập</a>
+    </p>
+</section>
+{% endblock %}

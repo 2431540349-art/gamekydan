@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "type": "click",
+    "title": "Email Phishing",
+    "image": "r3_phishing_email.svg",
+    "question": "Phân tích hình ảnh hộp thư. Chỉ ra vị trí liên kết đáng ngờ có thể dẫn tới trang giả mạo lấy cắp thông tin đăng nhập.",
+    "answer": { "x": 195, "y": 415, "radius": 55 },
+    "explanation": "Liên kết 'Xác minh tài khoản ngay' dùng tên miền lạ (secure-login-verify.net) thay vì domain chính thức — dấu hiệu điển hình của email phishing.",
+    "time": 25,
+    "score": 120
+  },
+  {
+    "id": 2,
+    "type": "click",
+    "title": "Brute Force",
+    "image": "r3_brute_force.svg",
+    "question": "Trong bảng log đăng nhập, chỉ ra vùng thể hiện hàng loạt lần đăng nhập thất bại liên tiếp từ cùng một IP.",
+    "answer": { "x": 420, "y": 340, "radius": 70 },
+    "explanation": "Chuỗi FAILED LOGIN lặp lại hàng chục lần/phút từ IP 203.0.113.44 là dấu hiệu tấn công brute force vào tài khoản người dùng.",
+    "time": 25,
+    "score": 120
+  },
+  {
+    "id": 3,
+    "type": "click",
+    "title": "Firewall Rule",
+    "image": "r3_firewall_rule.svg",
+    "question": "Kiểm tra bảng cấu hình tường lửa. Chỉ ra luật cho phép truy cập bất thường có thể mở lỗ hổng bảo mật.",
+    "answer": { "x": 400, "y": 278, "radius": 60 },
+    "explanation": "Luật ALLOW ANY → ANY trên cổng 3389 (RDP) từ mọi nguồn 0.0.0.0/0 vi phạm nguyên tắc least privilege và dễ bị khai thác.",
+    "time": 25,
+    "score": 120
+  },
+  {
+    "id": 4,
+    "type": "click",
+    "title": "Traffic Graph",
+    "image": "r3_traffic_graph.svg",
+    "question": "Quan sát biểu đồ lưu lượng mạng. Chỉ ra điểm bất thường cho thấy hoạt động tấn công hoặc rò rỉ dữ liệu.",
+    "answer": { "x": 585, "y": 175, "radius": 55 },
+    "explanation": "Đỉnh lưu lượng đột biến lúc 02:14 (gấp 8 lần baseline) không khớp mẫu truy cập thông thường — cần điều tra DDoS hoặc exfiltration.",
+    "time": 25,
+    "score": 120
+  },
+  {
+    "id": 5,
+    "type": "click",
+    "title": "Network Topology",
+    "image": "r3_network_topology.svg",
+    "question": "Trên sơ đồ mạng nội bộ, chỉ ra thiết bị/kết nối ngoài luồng có thể là điểm xâm nhập của attacker.",
+    "answer": { "x": 620, "y": 310, "radius": 50 },
+    "explanation": "Máy trạm HR-PC-07 kết nối trực tiếp ra Internet bỏ qua DMZ/Firewall segment — dấu hiệu thiết bị bị compromise hoặc cấu hình sai.",
+    "time": 25,
+    "score": 120
+  },
+  {
+    "id": 6,
+    "type": "click",
+    "title": "Trang Giả Mạo",
+    "image": "r3_fake_login.svg",
+    "question": "Trang đăng nhập dưới đây trông giống ngân hàng thật. Chỉ ra dấu hiệu cho thấy đây là trang giả mạo (không chỉ rõ bằng chữ).",
+    "answer": { "x": 280, "y": 84, "radius": 45 },
+    "explanation": "Thanh địa chỉ hiển thị 'secvire-bank-login.com' thay vì domain chính thức và thiếu chứng chỉ HTTPS hợp lệ — dấu hiệu trang phishing.",
+    "time": 25,
+    "score": 120
+  }
+]

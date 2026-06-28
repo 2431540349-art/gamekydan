@@ -53,13 +53,24 @@
             
             <nav class="nav-links" id="site-nav">
                 <a href="/">Trang chủ</a>
+                <a href="#" class="nav-item-btn" data-modal="game-rules-modal">Quy tắc game</a>
+                
+                <div class="dropdown-menu" id="docs-dropdown">
+                    <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                        Tài liệu tham khảo <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="#" class="nav-item-btn" data-modal="references-modal" data-section="1">Luật An ninh mạng 2025</a>
+                        <a href="#" class="nav-item-btn" data-modal="references-modal" data-section="2">Luật Bảo vệ DLCN 2025</a>
+                        <a href="#" class="nav-item-btn" data-modal="references-modal" data-section="3">Nghị định 13/2023</a>
+                    </div>
+                </div>
+
                 {% if current_user.is_authenticated %}
                     <a href="/profile" class="nav-user">
                         👤 {{ current_user.username }}
                     </a>
                     <a href="/logout" class="btn-ghost btn-sm">Thoát</a>
-                {% else %}
-                    <a href="/" class="btn-primary btn-sm">Chơi ngay</a>
                 {% endif %}
             </nav>
 
@@ -92,6 +103,189 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Modal: Game Rules -->
+    <div id="game-rules-modal" class="info-modal">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2>📋 Quy tắc Game</h2>
+                <button type="button" class="modal-close" data-modal-close aria-label="Đóng">✕</button>
+            </div>
+            <div class="modal-content">
+                <div class="rule-card-modal">
+                    <h3>🎮 Cách chơi</h3>
+                    <ul>
+                        <li>Mỗi câu hỏi có 4 phương án (A, B, C, D)</li>
+                        <li>Có <strong>30 giây</strong> để trả lời mỗi câu</li>
+                        <li>Chỉ được chọn <strong>1 phương án</strong> duy nhất</li>
+                        <li>Không thể quay lại câu hỏi trước</li>
+                    </ul>
+                </div>
+
+                <div class="rule-card-modal">
+                    <h3>⭐ Hệ thống điểm</h3>
+                    <div class="score-list">
+                        <div class="score-item correct">
+                            <span class="score-icon">✓</span>
+                            <span class="score-text">Trả lời đúng</span>
+                            <span class="score-points">+10</span>
+                        </div>
+                        <div class="score-item incorrect">
+                            <span class="score-icon">✗</span>
+                            <span class="score-text">Trả lời sai</span>
+                            <span class="score-points">-2</span>
+                        </div>
+                        <div class="score-item timeout">
+                            <span class="score-icon">⏱</span>
+                            <span class="score-text">Hết giờ</span>
+                            <span class="score-points">-1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-card-modal">
+                    <h3>🏆 Chế độ chơi</h3>
+                    <p><strong>Solo:</strong> Chơi riêng lẻ để rèn luyện kiến thức.</p>
+                    <p><strong>Multiplayer:</strong> Chơi cùng bạn, xem ai đạt điểm cao nhất.</p>
+                </div>
+
+                <div class="rule-card-modal">
+                    <h3>💡 Mẹo chơi</h3>
+                    <ul>
+                        <li>📖 Tìm hiểu kỹ luật pháp từ tài liệu tham khảo</li>
+                        <li>⏲ Trả lời nhanh và chính xác</li>
+                        <li>📝 Ghi chú những câu sai để học lại</li>
+                        <li>🎯 Tập trung vào lĩnh vực yếu</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: References -->
+    <div id="references-modal" class="info-modal">
+        <div class="modal-overlay" data-modal-close></div>
+        <div class="modal-panel">
+            <div class="modal-header">
+                <h2>📚 Tài liệu Tham khảo</h2>
+                <button type="button" class="modal-close" data-modal-close aria-label="Đóng">✕</button>
+            </div>
+            <div class="modal-content">
+                <!-- Section 1: Luật An ninh mạng 2025 -->
+                <div id="modal-ref-section-1" class="reference-section-modal" style="display: none;">
+                    <h3>📌 Luật An ninh mạng (LANM) 2025</h3>
+                    <div class="ref-cards-modal">
+                        <div class="ref-card-modal">
+                            <h4>⏰ Hiệu lực thi hành</h4>
+                            <p>Có hiệu lực từ <strong>01/07/2026</strong>, thay thế cho Luật 2018 và Luật An toàn thông tin mạng 2015.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>🏛️ Thống nhất cơ quan quản lý</h4>
+                            <p>Thẩm quyền quản lý tập trung về <strong>Bộ Công an (Cục A05)</strong>, giải quyết chồng chéo giữa các bộ ngành.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>🌐 Mở rộng phạm vi quản lý</h4>
+                            <p>Bao gồm cả <strong>"an ninh thông tin mạng"</strong> và <strong>"an ninh dữ liệu"</strong>.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>💾 Luật hóa An ninh dữ liệu</h4>
+                            <p>Lần đầu tiên "An ninh dữ liệu" được pháp điển hóa như thành tố cốt lõi, bảo vệ dữ liệu số như tài sản quốc gia.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>⛔ Các hành vi bị cấm (Điều 7)</h4>
+                            <ul>
+                                <li>Chiếm đoạt, mua bán, lộ bí mật nhà nước/kinh doanh/cá nhân</li>
+                                <li>Vi phạm bản quyền trên mạng</li>
+                                <li>Dùng AI/Deepfake giả mạo người khác</li>
+                                <li>Thu thập/phát tán trái pháp luật dữ liệu cá nhân</li>
+                            </ul>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>🏢 Ngành nghề kinh doanh có điều kiện</h4>
+                            <p><strong>Sản phẩm:</strong> Mật mã dân sự, kiểm tra an ninh mạng, chống tấn công.<br><strong>Dịch vụ:</strong> Tư vấn, ứng cứu sự cố, khôi phục dữ liệu, phòng ngừa tấn công.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Luật Bảo vệ DLCN 2025 -->
+                <div id="modal-ref-section-2" class="reference-section-modal" style="display: none;">
+                    <h3>📌 Luật Bảo vệ dữ liệu cá nhân (BVDLCN) 2025</h3>
+                    <div class="ref-cards-modal">
+                        <div class="ref-card-modal">
+                            <h4>📜 Nâng cấp khung pháp lý</h4>
+                            <p>Chuyển từ Nghị định 13/2023 thành <strong>Luật BVDLCN 2025</strong> (hiệu lực 01/01/2026), kèm Nghị định 356/2025.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>👥 Đối tượng áp dụng</h4>
+                            <p>Mọi tổ chức, cá nhân xử lý dữ liệu người Việt Nam, bao gồm công ty FDI và chuyển dữ liệu ra nước ngoài.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>✋ 7 nhóm quyền cơ bản</h4>
+                            <p>Quyền được biết, đồng ý/rút lại, xem/chỉnh sửa, cung cấp/xóa/hạn chế, phản đối, khiếu nại/bồi thường, bảo vệ.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>✔️ Quy định sự đồng ý</h4>
+                            <ul>
+                                <li>Phải rõ ràng, cụ thể, tự nguyện và <strong>tách biệt theo mục đích</strong></li>
+                                <li>Phải có cơ chế cho phép <strong>rút lại dễ dàng</strong></li>
+                                <li>Thời hạn ngừng xử lý: <strong>15-20 ngày</strong> tùy trường hợp</li>
+                            </ul>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>🔐 Khử nhận dạng (De-identification)</h4>
+                            <p>Dữ liệu sau khi khử nhận dạng không còn là DLCN, cho phép <strong>tự do sử dụng cho Big Data và AI</strong> mà không cần xin phép.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>📊 DPIA & CTIA</h4>
+                            <p><strong>DPIA:</strong> Thiết lập trong 60 ngày, cập nhật 6 tháng hoặc 10 ngày nếu thay đổi.<br><strong>CTIA:</strong> Áp dụng Cloud nước ngoài, lập trong 60 ngày.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>👨‍💼 Chỉ định DPO</h4>
+                            <p><strong>Yêu cầu:</strong> Cao đẳng trở lên, 2+ năm kinh nghiệm (Pháp chế, IT, An ninh mạng), được đào tạo chuyên môn về BVDLCN.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Nghị định 13/2023 -->
+                <div id="modal-ref-section-3" class="reference-section-modal" style="display: none;">
+                    <h3>📌 Nghị định 13/2023/NĐ-CP</h3>
+                    <div class="ref-cards-modal">
+                        <div class="ref-card-modal">
+                            <h4>📝 Hiệu lực thi hành</h4>
+                            <p>Có hiệu lực từ <strong>01/07/2023</strong>. Đây là căn cứ pháp lý nền tảng cho Luật BVDLCN 2025.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>🏷️ Phân loại dữ liệu</h4>
+                            <p><strong>Cơ bản:</strong> Họ tên, ngày sinh, giới tính, địa chỉ, số điện thoại, CMND, hôn nhân.<br><strong>Nhạy cảm:</strong> Chính trị, tôn giáo, sức khỏe, di truyền, vị trí, tài khoản ngân hàng.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>⚖️ Nguyên tắc bảo vệ</h4>
+                            <ul>
+                                <li>Xử lý theo <strong>quy định pháp luật</strong></li>
+                                <li>Chủ thể phải <strong>được biết</strong> về xử lý</li>
+                                <li>Chỉ xử lý <strong>đúng mục đích đã đăng ký</strong></li>
+                                <li><strong>Cập nhật, bảo mật</strong> trong suốt quá trình</li>
+                            </ul>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>✊ 11 nhóm quyền</h4>
+                            <p>Được biết, đồng ý, truy cập, rút lại, xóa, hạn chế, cung cấp, phản đối, khiếu nại, bồi thường, tự bảo vệ.</p>
+                        </div>
+                        <div class="ref-card-modal">
+                            <h4>📋 Hồ sơ tuân thủ</h4>
+                            <p><strong>DPIA:</strong> Lập từ lúc bắt đầu xử lý.<br><strong>CTIA:</strong> Lập và gửi Bộ Công an trong 60 ngày.<br><strong>DPO:</strong> Bắt buộc với tổ chức xử lý DLCN nhạy cảm.</p>
+                        </div>
+                        <div class="ref-card-modal info-highlight">
+                            <h4>⚡ Lưu ý quan trọng</h4>
+                            <p><strong>Doanh nghiệp cần hoàn thiện hồ sơ DPIA và CTIA ngay để đảm bảo chuyển tiếp sang Luật BVDLCN 2025.</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     
     <!-- Hot reload ping (legacy support) -->
     <div id="ping" style="display:none;"></div>
@@ -108,6 +302,9 @@
             const menuButton = document.querySelector('.mobile-menu-btn');
             const siteNav = document.getElementById('site-nav');
             const flashMessages = document.querySelector('.flash-messages');
+            const dropdownToggle = document.querySelector('.dropdown-toggle');
+            const dropdownContent = document.querySelector('.dropdown-content');
+            
             const setViewportHeight = () => {
                 document.documentElement.style.setProperty('--app-vh', `${window.innerHeight * 0.01}px`);
                 document.body.classList.toggle('compact-mobile', window.innerWidth <= 640);
@@ -122,13 +319,132 @@
                 }, 5000);
             }
 
-            if (!menuButton || !siteNav) return;
+            // Handle mobile menu toggle
+            if (menuButton && siteNav) {
+                menuButton.addEventListener('click', () => {
+                    const isOpen = siteNav.classList.toggle('is-open');
+                    menuButton.classList.toggle('is-open', isOpen);
+                    menuButton.setAttribute('aria-expanded', String(isOpen));
+                    menuButton.setAttribute('aria-label', isOpen ? 'Đóng menu' : 'Mở menu');
+                });
+            }
 
-            menuButton.addEventListener('click', () => {
-                const isOpen = siteNav.classList.toggle('is-open');
-                menuButton.classList.toggle('is-open', isOpen);
-                menuButton.setAttribute('aria-expanded', String(isOpen));
-                menuButton.setAttribute('aria-label', isOpen ? 'Đóng menu' : 'Mở menu');
+            // Handle dropdown menu
+            if (dropdownToggle && dropdownContent) {
+                dropdownToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = dropdownContent.classList.toggle('show');
+                    dropdownToggle.setAttribute('aria-expanded', String(isOpen));
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.dropdown-menu')) {
+                        dropdownContent.classList.remove('show');
+                        dropdownToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Close dropdown when clicking on a link (without preventing navigation)
+                dropdownContent.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        dropdownContent.classList.remove('show');
+                        dropdownToggle.setAttribute('aria-expanded', 'false');
+                    });
+                });
+
+                // Prevent closing when scrolling in game area
+                document.getElementById('app-main')?.addEventListener('wheel', (e) => {
+                    if (e.target.closest('.game-container') || e.target.closest('.game-board')) {
+                        // Allow game interactions to happen without closing dropdown
+                        e.stopPropagation();
+                    }
+                }, true);
+            }
+
+            // Modal functionality
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('show');
+                    document.body.style.overflow = '';
+                }
+            }
+
+            // Handle modal buttons in nav
+            document.querySelectorAll('.nav-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const modalId = btn.dataset.modal;
+                    const section = btn.dataset.section;
+                    
+                    // Hide all sections in references modal
+                    if (modalId === 'references-modal') {
+                        document.querySelectorAll('.reference-section-modal').forEach(sec => {
+                            sec.style.display = 'none';
+                        });
+                        // Show selected section
+                        const sectionId = `modal-ref-section-${section}`;
+                        const selectedSection = document.getElementById(sectionId);
+                        if (selectedSection) {
+                            selectedSection.style.display = 'block';
+                        }
+                    }
+                    
+                    openModal(modalId);
+                    
+                    // Close mobile menu and dropdown
+                    if (siteNav && siteNav.classList.contains('is-open')) {
+                        siteNav.classList.remove('is-open');
+                        if (menuButton) {
+                            menuButton.classList.remove('is-open');
+                            menuButton.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                    if (dropdownContent) {
+                        dropdownContent.classList.remove('show');
+                        if (dropdownToggle) {
+                            dropdownToggle.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+
+            // Handle modal close buttons
+            document.querySelectorAll('[data-modal-close]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = btn.closest('.info-modal');
+                    if (modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+            // Close modal when clicking overlay
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', () => {
+                    const modal = overlay.closest('.info-modal');
+                    if (modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+            // Close modal on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.info-modal.show').forEach(modal => {
+                        closeModal(modal.id);
+                    });
+                }
             });
         });
     </script>

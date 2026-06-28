@@ -23,7 +23,7 @@
                 {% for team_id in range(1, 11) %}
                 <button class="team-card" type="button" data-team="{{ team_id }}">
                     <span class="team-name">Đội {{ team_id }}</span>
-                    <span class="team-count">0/5</span>
+                    <span class="team-count">0/6</span>
                     <span class="team-members">Đang chờ thành viên</span>
                 </button>
                 {% endfor %}
@@ -51,6 +51,66 @@
             <!-- Players populated by JS -->
         </div>
     </div>
+</div>
+
+<!-- SCENE INTRO SCREEN -->
+<div id="screen-scene" class="screen scene-briefing-container">
+    <section class="scene-briefing-panel">
+        <div class="scene-kicker">NHÂN VẬT &amp; BỐI CẢNH</div>
+        <h1>Vụ rò rỉ dữ liệu VIP</h1>
+
+        <div class="scene-character-grid" aria-label="Danh sách nhân vật và bối cảnh">
+            <article class="scene-character-card">
+                <div class="scene-character-icon">⚖️</div>
+                <div>
+                    <h2>Vũ Quốc Hưng</h2>
+                    <p><strong>Luật sư DIMAC:</strong> "Cỗ máy soi lỗi" pháp lý.</p>
+                </div>
+            </article>
+
+            <article class="scene-character-card">
+                <div class="scene-character-icon">🏢</div>
+                <div>
+                    <h2>Lê Mạnh Hùng</h2>
+                    <p><strong>Giám đốc Công ty A &amp; B:</strong> Đang đứng trước nguy cơ bị phạt 5% doanh thu.</p>
+                </div>
+            </article>
+
+            <article class="scene-character-card">
+                <div class="scene-character-icon">💻</div>
+                <div>
+                    <h2>Nguyễn Thái Sơn</h2>
+                    <p><strong>Chuyên gia Sơn - IT Anh &amp; Em:</strong> Người nắm giữ "chìa khóa" công nghệ.</p>
+                </div>
+            </article>
+
+            <article class="scene-character-card">
+                <div class="scene-character-icon">🔒</div>
+                <div>
+                    <h2>Hồ Ngọc Thanh</h2>
+                    <p><strong>Nạn nhân:</strong> Khách hàng VIP bị lộ dữ liệu nhạy cảm, đang yêu cầu bồi thường.</p>
+                </div>
+            </article>
+        </div>
+
+        <div class="scene-countdown">
+            <span>Trận đấu bắt đầu sau</span>
+            <strong id="scene-countdown">12</strong>
+        </div>
+    </section>
+</div>
+
+<!-- ROUND INTRO SCREEN -->
+<div id="screen-round-intro" class="screen round-intro-container">
+    <section class="round-intro-panel">
+        <div class="round-intro-kicker">Vòng 1</div>
+        <h1>Vòng loại</h1>
+        <p>10 đội tham gia. Chọn ra <strong>7 đội may mắn</strong> đi tiếp và <strong>3 đội bị loại</strong>.</p>
+        <div class="round-intro-countdown">
+            <span>Bắt đầu sau</span>
+            <strong id="round-intro-countdown">5</strong>
+        </div>
+    </section>
 </div>
 
 <!-- GAME SCREEN -->
@@ -115,6 +175,135 @@
         </div>
     </div>
 
+    <!-- ROUND 3 CYBER DETECTIVE ENGINE LAYOUT -->
+    <div id="round3-game-layout" class="round3-game-layout hidden">
+        <!-- Top: Timer & Title -->
+        <div class="r3-top-bar card">
+            <div class="r3-header-left">
+                <span class="r3-round-title">Vòng 3 — Phát hiện tấn công</span>
+                <span class="r3-case-title" id="r3-case-title">Đang tải vụ án...</span>
+            </div>
+            <div class="r3-timer-box">
+                <span class="r3-timer-label">⏱️ Thời gian:</span>
+                <span class="r3-timer-val" id="r3-timer">30</span>s
+            </div>
+        </div>
+
+        <div class="r3-middle-container">
+            <!-- Left Panel: Current Score -->
+            <div class="r3-left-panel">
+                <div class="card r3-panel-card">
+                    <div class="r3-panel-label">Điểm Số</div>
+                    <div class="r3-panel-value" id="r3-score">0</div>
+                    <div class="r3-panel-sub" id="r3-streak-display">🔥 Chuỗi: <span id="r3-streak">0</span></div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Large Image & Interaction Canvas -->
+            <div class="r3-center-panel">
+                <div class="card r3-image-card">
+                    <div class="r3-image-wrapper" id="r3-image-wrapper">
+                        <img id="r3-case-image" src="" alt="Case Image" />
+                        <div id="r3-interaction-layer" class="r3-interaction-layer">
+                            <!-- Dynamic canvas, drag-drop targets, text inputs, etc. will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Current Ranking -->
+            <div class="r3-right-panel">
+                <div class="card r3-panel-card">
+                    <div class="r3-panel-label">Hạng của Bạn</div>
+                    <div class="r3-panel-value" id="r3-rank">--</div>
+                    <div class="r3-panel-sub" id="r3-team-rank">Đội của bạn: <span id="r3-my-team">--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panel: Instruction & Controls -->
+        <div class="r3-bottom-bar card">
+            <div class="r3-instruction-section">
+                <div class="r3-section-label">Nhiệm vụ phân tích:</div>
+                <div class="r3-instruction" id="r3-instruction">Đang tải chỉ dẫn nhiệm vụ...</div>
+            </div>
+            <div class="r3-controls">
+                <button id="btn-r3-submit" class="btn btn-primary btn-lg">Nộp bài</button>
+                <button id="btn-r3-next" class="btn btn-accent btn-lg hidden">Câu tiếp theo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROUND 4: CYBER INCIDENT RESPONSE -->
+    <div id="round4-game-layout" class="round4-game-layout hidden">
+        <div class="r4-top-bar card">
+            <div class="r4-header-left">
+                <span class="r4-incident-title" id="r4-incident-title">Sự cố...</span>
+                <span class="r4-team-badge" id="r4-active-team">Đội...</span>
+            </div>
+            <div class="r4-progress-tracker" id="r4-mission-progress-banner">
+                Nhiệm vụ: <span id="r4-current-mission-index">0</span>/5
+            </div>
+            <div class="r4-timer-box">
+                <span class="r4-timer-label">⏱️ Lượt đi:</span>
+                <span class="r4-timer-val" id="r4-timer">20</span>s
+            </div>
+        </div>
+
+        <div class="r4-middle-container">
+            <div class="r4-left-panel">
+                <div class="card r4-panel-card">
+                    <div class="r4-panel-label">Thành viên đội</div>
+                    <div class="r4-teammate-list" id="r4-teammate-list">
+                    </div>
+                </div>
+            </div>
+
+            <div class="r4-center-panel">
+                <div class="card r4-image-card">
+                    <div id="r4-spectator-overlay" class="r4-spectator-overlay hidden">
+                        <div class="r4-overlay-content">
+                            <span class="r4-overlay-icon">👁️</span>
+                            <h3>Bạn đang quan sát</h3>
+                            <p>Đồng đội <strong id="r4-active-player-name-overlay">...</strong> đang thực hiện nhiệm vụ.</p>
+                        </div>
+                    </div>
+                    <div class="r4-image-wrapper" id="r4-image-wrapper">
+                        <img id="r4-case-image" src="" alt="Incident Mission Image" />
+                        <div id="r4-interaction-layer" class="r4-interaction-layer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="r4-right-panel">
+                <div class="card r4-panel-card">
+                    <div class="r4-panel-label">Đội đối thủ</div>
+                    <div id="r4-opponent-status-box" class="r4-opponent-status-box">
+                        <div class="r4-opp-header">
+                            <span id="r4-opponent-team-name">Đối thủ</span>
+                            <span id="r4-opponent-score" class="badge">0đ</span>
+                        </div>
+                        <div class="r4-opp-progress-dots" id="r4-opponent-progress-dots">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="r4-bottom-bar card">
+            <div class="r4-instruction-section">
+                <div class="r4-section-label">Nhiệm vụ của bạn:</div>
+                <div class="r4-instruction" id="r4-instruction">Đang tải nhiệm vụ...</div>
+            </div>
+            <div class="r4-controls">
+                <span class="r4-team-score-display">Điểm đội: <strong id="r4-team-score">0</strong></span>
+                <button id="btn-r4-hint" class="btn btn-warning">Gợi ý</button>
+                <button id="btn-r4-submit" class="btn btn-primary btn-lg">Nộp bài</button>
+            </div>
+        </div>
+    </div>
+
     <!-- HOST DASHBOARD VIEW -->
     <div id="host-dashboard" class="host-dashboard-container hidden">
         <div class="card host-card mb-2">
@@ -140,6 +329,15 @@
                 <div class="host-section-title">Tiến độ trả lời của các đội</div>
                 <div class="host-teams-grid" id="host-teams-progress">
                     <!-- Will be dynamically populated by JS -->
+                </div>
+            </div>
+
+            <!-- Live Team Progress for Round 4 -->
+            <div class="host-progress-section mb-2 hidden" id="host-round4-section">
+                <div class="host-section-title">🕵️ Giám sát Vòng 4 — Cyber Incident Response</div>
+                <div class="host-incident-title-monitor" style="margin-bottom: 10px; color: var(--accent);">Vụ án: <strong id="host-r4-incident-title">...</strong></div>
+                <div class="host-teams-grid" id="host-r4-teams-progress">
+                    <!-- Populated by JS -->
                 </div>
             </div>
 

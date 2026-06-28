@@ -15,7 +15,11 @@ def get_question():
     c_id = request.args.get("c", 0)
     q = Question.random(int(c_id))
     if q:
-        return jsonify(q.to_dict(pop=["right_answer"])), 200
+        payload = q.to_dict(pop=["correct_answer"])
+        payload["question"] = q.content
+        payload["answers"] = q.answers
+        payload["points"] = q.points
+        return jsonify(payload), 200
     else:
         abort(404)
 

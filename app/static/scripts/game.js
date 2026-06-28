@@ -171,9 +171,13 @@ let active = false;
 
     // Basic UI Elements
     const screenLobby = document.getElementById('screen-lobby');
+    const screenScene = document.getElementById('screen-scene');
+    const screenRoundIntro = document.getElementById('screen-round-intro');
     const screenGame = document.getElementById('screen-game');
     const screenBreak = document.getElementById('screen-break');
     const screenResults = document.getElementById('screen-results');
+    const sceneCountdown = document.getElementById('scene-countdown');
+    const roundIntroCountdown = document.getElementById('round-intro-countdown');
     
     const lobbyPlayers = document.getElementById('lobby-players');
     const playerCount = document.getElementById('player-count');
@@ -222,7 +226,44 @@ const resCorrect = document.getElementById('res-correct');
     const winnerTeamName = document.getElementById('winner-team-name');
     const mvpPlayerName = document.getElementById('mvp-player-name');
     const mvpPlayerScore = document.getElementById('mvp-player-score');
-    const resultsTitle = document.getElementById('results-title');
+    // Round 3 Detective Elements
+    const round3GameLayout = document.getElementById('round3-game-layout');
+    const r3Timer = document.getElementById('r3-timer');
+    const r3CaseTitle = document.getElementById('r3-case-title');
+    const r3Score = document.getElementById('r3-score');
+    const r3Streak = document.getElementById('r3-streak');
+    const r3Rank = document.getElementById('r3-rank');
+    const r3MyTeam = document.getElementById('r3-my-team');
+    const r3Instruction = document.getElementById('r3-instruction');
+    const btnR3Submit = document.getElementById('btn-r3-submit');
+    const btnR3Next = document.getElementById('btn-r3-next');
+    const r3InteractionLayer = document.getElementById('r3-interaction-layer');
+    const r3CaseImage = document.getElementById('r3-case-image');
+    const r3ImageWrapper = document.getElementById('r3-image-wrapper');
+    let r3CurrentHandler = null;
+
+    // Round 4 Incident Response Elements
+    const round4GameLayout = document.getElementById('round4-game-layout');
+    const r4Timer = document.getElementById('r4-timer');
+    const r4IncidentTitle = document.getElementById('r4-incident-title');
+    const r4ActiveTeam = document.getElementById('r4-active-team');
+    const r4CurrentMissionIndex = document.getElementById('r4-current-mission-index');
+    const r4Instruction = document.getElementById('r4-instruction');
+    const r4InteractionLayer = document.getElementById('r4-interaction-layer');
+    const r4CaseImage = document.getElementById('r4-case-image');
+    const r4ImageWrapper = document.getElementById('r4-image-wrapper');
+    const r4TeammateList = document.getElementById('r4-teammate-list');
+    const r4SpectatorOverlay = document.getElementById('r4-spectator-overlay');
+    const r4ActivePlayerNameOverlay = document.getElementById('r4-active-player-name-overlay');
+    const r4OpponentTeamName = document.getElementById('r4-opponent-team-name');
+    const r4OpponentScore = document.getElementById('r4-opponent-score');
+    const r4OpponentProgressDots = document.getElementById('r4-opponent-progress-dots');
+    const r4TeamScore = document.getElementById('r4-team-score');
+    const btnR4Submit = document.getElementById('btn-r4-submit');
+    const btnR4Hint = document.getElementById('btn-r4-hint');
+    let r4CurrentHandler = null;
+    let r4ActivePlayerSid = null;
+    let r4HintUsed = false;
 
     // State
     let socket;
@@ -238,6 +279,9 @@ const resCorrect = document.getElementById('res-correct');
     let isEliminated = false;
     let currentPlayers = [];
     let currentAnswersProgress = [];
+    let sceneCountdownTimer = null;
+    let roundIntroTimer = null;
+    let isAnswerLocked = false;
 
     const TOURNAMENT_ROUNDS = {
         1: { name: 'Vòng 1 — Loại sơ' },
@@ -247,6 +291,785 @@ const resCorrect = document.getElementById('res-correct');
     };
 
     const teamLocked = Boolean(window.GAME_CONFIG.playerTeam);
+
+    // ==========================================================================
+    // CYBER DETECTIVE ENGINE - INTERACTION HANDLERS
+    // ==========================================================================
+
+    class BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            this.container = container;
+            this.caseData = caseData;
+            this.onAnswerChange = onAnswerChange;
+            this.submitted = false;
+        }
+
+        render() {
+            this.container.innerHTML = '';
+        }
+
+        getAnswerPayload() {
+            return null;
+        }
+
+        disable() {
+            this.submitted = true;
+        }
+
+        showCorrectAnswer(correctDetails) {
+        }
+    }
+
+    class ClickAreaHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.clickCoord = null;
+        }
+
+        render() {
+            super.render();
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;';
+            overlay.addEventListener('click', (e) => {
+                if (this.submitted) return;
+                const rect = overlay.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 800;
+                const y = ((e.clientY - rect.top) / rect.height) * 600;
+                this.clickCoord = { x, y };
+
+                this.drawMarker(x, y);
+                if (this.onAnswerChange) this.onAnswerChange(this.clickCoord);
+                SoundEffects.playClick();
+            });
+            this.container.appendChild(overlay);
+        }
+
+        drawMarker(x, y, isCorrect = false) {
+            const existing = this.container.querySelector('.r3-marker');
+            if (existing) existing.remove();
+
+            const marker = document.createElement('div');
+            marker.className = 'r3-marker' + (isCorrect ? ' correct-marker' : '');
+            marker.style.left = (x / 800 * 100) + '%';
+            marker.style.top = (y / 600 * 100) + '%';
+            this.container.appendChild(marker);
+        }
+
+        getAnswerPayload() {
+            return this.clickCoord;
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails && correctDetails.x !== undefined && correctDetails.y !== undefined) {
+                this.drawMarker(correctDetails.x, correctDetails.y, true);
+            }
+        }
+    }
+
+    class ImageHotspotHandler extends ClickAreaHandler {}
+
+    class HighlightRegionHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.startPt = null;
+            this.endPt = null;
+            this.isDrawing = false;
+            this.boxEl = null;
+        }
+
+        render() {
+            super.render();
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; cursor: crosshair; user-select: none;';
+            
+            const handleStart = (clientX, clientY, rect) => {
+                if (this.submitted) return;
+                this.isDrawing = true;
+                const startX = ((clientX - rect.left) / rect.width) * 800;
+                const startY = ((clientY - rect.top) / rect.height) * 600;
+                this.startPt = { x: startX, y: startY };
+                this.endPt = { x: startX, y: startY };
+
+                if (this.boxEl) this.boxEl.remove();
+                this.boxEl = document.createElement('div');
+                this.boxEl.className = 'r3-highlight-box';
+                this.updateBoxDOM();
+                this.container.appendChild(this.boxEl);
+            };
+
+            const handleMove = (clientX, clientY, rect) => {
+                if (!this.isDrawing || this.submitted) return;
+                const currentX = ((clientX - rect.left) / rect.width) * 800;
+                const currentY = ((clientY - rect.top) / rect.height) * 600;
+                this.endPt = { x: currentX, y: currentY };
+                this.updateBoxDOM();
+            };
+
+            const handleEnd = () => {
+                if (!this.isDrawing || this.submitted) return;
+                this.isDrawing = false;
+                if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+            };
+
+            overlay.addEventListener('mousedown', (e) => {
+                const rect = overlay.getBoundingClientRect();
+                handleStart(e.clientX, e.clientY, rect);
+            });
+
+            overlay.addEventListener('mousemove', (e) => {
+                const rect = overlay.getBoundingClientRect();
+                handleMove(e.clientX, e.clientY, rect);
+            });
+
+            window.addEventListener('mouseup', handleEnd);
+
+            overlay.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    const rect = overlay.getBoundingClientRect();
+                    handleStart(e.touches[0].clientX, e.touches[0].clientY, rect);
+                    e.preventDefault();
+                }
+            });
+
+            overlay.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1) {
+                    const rect = overlay.getBoundingClientRect();
+                    handleMove(e.touches[0].clientX, e.touches[0].clientY, rect);
+                    e.preventDefault();
+                }
+            });
+
+            overlay.addEventListener('touchend', handleEnd);
+
+            this.container.appendChild(overlay);
+        }
+
+        updateBoxDOM() {
+            if (!this.boxEl || !this.startPt || !this.endPt) return;
+            const x1 = Math.min(this.startPt.x, this.endPt.x);
+            const y1 = Math.min(this.startPt.y, this.endPt.y);
+            const x2 = Math.max(this.startPt.x, this.endPt.x);
+            const y2 = Math.max(this.startPt.y, this.endPt.y);
+
+            this.boxEl.style.left = (x1 / 800 * 100) + '%';
+            this.boxEl.style.top = (y1 / 600 * 100) + '%';
+            this.boxEl.style.width = ((x2 - x1) / 800 * 100) + '%';
+            this.boxEl.style.height = ((y2 - y1) / 600 * 100) + '%';
+        }
+
+        getAnswerPayload() {
+            if (!this.startPt || !this.endPt) return null;
+            return {
+                x1: Math.min(this.startPt.x, this.endPt.x),
+                y1: Math.min(this.startPt.y, this.endPt.y),
+                x2: Math.max(this.startPt.x, this.endPt.x),
+                y2: Math.max(this.startPt.y, this.endPt.y)
+            };
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails && correctDetails.x1 !== undefined) {
+                const cBox = document.createElement('div');
+                cBox.className = 'r3-highlight-box correct-box';
+                cBox.style.left = (correctDetails.x1 / 800 * 100) + '%';
+                cBox.style.top = (correctDetails.y1 / 600 * 100) + '%';
+                cBox.style.width = ((correctDetails.x2 - correctDetails.x1) / 800 * 100) + '%';
+                cBox.style.height = ((correctDetails.y2 - correctDetails.y1) / 600 * 100) + '%';
+                this.container.appendChild(cBox);
+            }
+        }
+    }
+
+    class DragDropHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.mapping = {};
+        }
+
+        render() {
+            super.render();
+            const dragContainer = document.createElement('div');
+            dragContainer.className = 'r3-drag-container';
+
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'r3-drag-items';
+            
+            (this.caseData.items || []).forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'r3-drag-item';
+                itemEl.textContent = item.label;
+                itemEl.draggable = true;
+                itemEl.id = `drag-${item.id}`;
+                itemEl.addEventListener('dragstart', (e) => {
+                    if (this.submitted) { e.preventDefault(); return; }
+                    e.dataTransfer.setData('text/plain', item.id);
+                    itemEl.classList.add('dragging');
+                });
+                itemEl.addEventListener('dragend', () => {
+                    itemEl.classList.remove('dragging');
+                });
+                itemsContainer.appendChild(itemEl);
+            });
+
+            const dropzonesContainer = document.createElement('div');
+            dropzonesContainer.className = 'r3-dropzones';
+
+            (this.caseData.targets || []).forEach(target => {
+                const dropzone = document.createElement('div');
+                dropzone.className = 'r3-dropzone';
+                dropzone.id = `dropzone-${target.id}`;
+                dropzone.innerHTML = `<div class="r3-dropzone-label">${target.label}</div>`;
+
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!this.submitted) dropzone.classList.add('dragover');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('dragover');
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('dragover');
+                    if (this.submitted) return;
+
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const itemEl = document.getElementById(`drag-${itemId}`);
+                    if (itemEl) {
+                        dropzone.appendChild(itemEl);
+                        this.mapping[itemId] = target.id;
+                        if (this.onAnswerChange) this.onAnswerChange(this.mapping);
+                        SoundEffects.playClick();
+                    }
+                });
+
+                dropzonesContainer.appendChild(dropzone);
+            });
+
+            dragContainer.appendChild(itemsContainer);
+            dragContainer.appendChild(dropzonesContainer);
+            this.container.appendChild(dragContainer);
+        }
+
+        getAnswerPayload() {
+            return this.mapping;
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails) {
+                Object.entries(correctDetails).forEach(([itemId, targetId]) => {
+                    const itemEl = document.getElementById(`drag-${itemId}`);
+                    const dropzoneEl = document.getElementById(`dropzone-${targetId}`);
+                    if (itemEl && dropzoneEl) {
+                        dropzoneEl.appendChild(itemEl);
+                        itemEl.draggable = false;
+                        itemEl.style.borderColor = 'var(--success)';
+                        itemEl.style.background = 'rgba(16, 185, 129, 0.1)';
+                    }
+                });
+            }
+        }
+    }
+
+    class ConnectObjectsHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.connections = {};
+            this.selectedLeft = null;
+            this.nodes = {};
+        }
+
+        render() {
+            super.render();
+            const connectContainer = document.createElement('div');
+            connectContainer.className = 'r3-connect-container';
+
+            const leftCol = document.createElement('div');
+            leftCol.className = 'r3-connect-column left';
+            const rightCol = document.createElement('div');
+            rightCol.className = 'r3-connect-column right';
+
+            (this.caseData.left_items || []).forEach(item => {
+                const node = document.createElement('div');
+                node.className = 'r3-connect-node';
+                node.textContent = item.label;
+                node.id = `node-${item.id}`;
+                node.innerHTML += '<span class="r3-connect-dot"></span>';
+
+                node.addEventListener('click', () => {
+                    if (this.submitted) return;
+                    SoundEffects.playClick();
+                    if (this.selectedLeft) {
+                        const prevNode = document.getElementById(`node-${this.selectedLeft}`);
+                        if (prevNode) prevNode.classList.remove('selected');
+                    }
+                    this.selectedLeft = item.id;
+                    node.classList.add('selected');
+                });
+
+                leftCol.appendChild(node);
+                this.nodes[item.id] = node;
+            });
+
+            (this.caseData.right_items || []).forEach(item => {
+                const node = document.createElement('div');
+                node.className = 'r3-connect-node';
+                node.textContent = item.label;
+                node.id = `node-${item.id}`;
+                node.innerHTML = '<span class="r3-connect-dot"></span>' + node.innerHTML;
+
+                node.addEventListener('click', () => {
+                    if (this.submitted || !this.selectedLeft) return;
+                    SoundEffects.playClick();
+                    
+                    this.connections[this.selectedLeft] = item.id;
+                    
+                    const leftNode = document.getElementById(`node-${this.selectedLeft}`);
+                    if (leftNode) leftNode.classList.remove('selected');
+                    this.selectedLeft = null;
+
+                    this.drawLines();
+                    if (this.onAnswerChange) this.onAnswerChange(this.connections);
+                });
+
+                rightCol.appendChild(node);
+                this.nodes[item.id] = node;
+            });
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'r3-connections-svg');
+            this.svg = svg;
+
+            connectContainer.appendChild(leftCol);
+            connectContainer.appendChild(rightCol);
+            this.container.appendChild(svg);
+            this.container.appendChild(connectContainer);
+
+            window.addEventListener('resize', () => this.drawLines());
+            setTimeout(() => this.drawLines(), 100);
+        }
+
+        drawLines(correctAnswer = null) {
+            if (!this.svg) return;
+            this.svg.innerHTML = '';
+
+            const rect = this.container.getBoundingClientRect();
+            if (rect.width === 0) return;
+
+            Object.entries(this.connections).forEach(([leftId, rightId]) => {
+                const leftDot = this.nodes[leftId]?.querySelector('.r3-connect-dot');
+                const rightDot = this.nodes[rightId]?.querySelector('.r3-connect-dot');
+
+                if (leftDot && rightDot) {
+                    const lRect = leftDot.getBoundingClientRect();
+                    const rRect = rightDot.getBoundingClientRect();
+
+                    const x1 = lRect.left + lRect.width / 2 - rect.left;
+                    const y1 = lRect.top + lRect.height / 2 - rect.top;
+                    const x2 = rRect.left + rRect.width / 2 - rect.left;
+                    const y2 = rRect.top + rRect.height / 2 - rect.top;
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+
+                    let cName = 'r3-connection-line';
+                    if (correctAnswer) {
+                        if (correctAnswer[leftId] === rightId) {
+                            cName += ' correct';
+                        } else {
+                            cName += ' wrong';
+                        }
+                    }
+                    line.setAttribute('class', cName);
+                    this.svg.appendChild(line);
+                }
+            });
+        }
+
+        getAnswerPayload() {
+            return this.connections;
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails) {
+                this.drawLines(correctDetails);
+                Object.entries(correctDetails).forEach(([leftId, rightId]) => {
+                    if (this.connections[leftId] !== rightId) {
+                        this.connections[leftId] = rightId;
+                    }
+                });
+                this.drawLines(correctDetails);
+            }
+        }
+    }
+
+    class TimelineOrderingHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.events = [...(this.caseData.events || [])];
+        }
+
+        render() {
+            super.render();
+            const timelineContainer = document.createElement('div');
+            timelineContainer.className = 'r3-timeline-container';
+
+            const listEl = document.createElement('div');
+            listEl.className = 'r3-timeline-list';
+            this.listEl = listEl;
+
+            this.renderListItems();
+            timelineContainer.appendChild(listEl);
+            this.container.appendChild(timelineContainer);
+        }
+
+        renderListItems(correctAnswer = null) {
+            if (!this.listEl) return;
+            this.listEl.innerHTML = '';
+
+            this.events.forEach((ev, idx) => {
+                const item = document.createElement('div');
+                item.className = 'r3-timeline-item';
+                if (correctAnswer && correctAnswer[idx] === ev.id) {
+                    item.className += ' correct-item';
+                }
+                item.textContent = `${idx + 1}. ${ev.label}`;
+
+                const controls = document.createElement('div');
+                controls.className = 'r3-item-controls';
+
+                const btnUp = document.createElement('button');
+                btnUp.className = 'r3-btn-arrow';
+                btnUp.textContent = '▲';
+                btnUp.disabled = this.submitted || idx === 0;
+                btnUp.addEventListener('click', () => {
+                    SoundEffects.playClick();
+                    const temp = this.events[idx - 1];
+                    this.events[idx - 1] = this.events[idx];
+                    this.events[idx] = temp;
+                    this.renderListItems();
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                });
+
+                const btnDown = document.createElement('button');
+                btnDown.className = 'r3-btn-arrow';
+                btnDown.textContent = '▼';
+                btnDown.disabled = this.submitted || idx === this.events.length - 1;
+                btnDown.addEventListener('click', () => {
+                    SoundEffects.playClick();
+                    const temp = this.events[idx + 1];
+                    this.events[idx + 1] = this.events[idx];
+                    this.events[idx] = temp;
+                    this.renderListItems();
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                });
+
+                controls.appendChild(btnUp);
+                controls.appendChild(btnDown);
+                item.appendChild(controls);
+                this.listEl.appendChild(item);
+            });
+        }
+
+        getAnswerPayload() {
+            return this.events.map(ev => ev.id);
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails) {
+                const sorted = [];
+                correctDetails.forEach(id => {
+                    const ev = this.events.find(e => e.id === id);
+                    if (ev) sorted.push(ev);
+                });
+                this.events = sorted;
+                this.renderListItems(correctDetails);
+            }
+        }
+    }
+
+    class TextInputHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.textVal = '';
+        }
+
+        render() {
+            super.render();
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'r3-text-input-container';
+
+            const field = document.createElement('input');
+            field.type = 'text';
+            field.className = 'r3-text-field';
+            field.placeholder = 'Nhập mật mã/đáp án trinh thám...';
+            field.id = 'r3-input-field';
+            
+            field.addEventListener('input', (e) => {
+                this.textVal = e.target.value;
+                if (this.onAnswerChange) this.onAnswerChange(this.textVal);
+            });
+
+            inputContainer.appendChild(field);
+            this.container.appendChild(inputContainer);
+        }
+
+        getAnswerPayload() {
+            return this.textVal;
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            const field = document.getElementById('r3-input-field');
+            if (field && correctDetails) {
+                field.disabled = true;
+                field.value = correctDetails;
+                field.style.borderColor = 'var(--success)';
+                field.style.color = 'var(--success)';
+                field.style.background = 'rgba(16, 185, 129, 0.05)';
+            }
+        }
+    }
+
+    class MultipleHotspotsHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.clickedPts = [];
+        }
+
+        render() {
+            super.render();
+            const counter = document.createElement('div');
+            counter.className = 'r3-hotspots-counter';
+            counter.id = 'r3-hotspots-counter';
+            counter.textContent = `Đã chọn: 0 / ${this.caseData.hotspots ? this.caseData.hotspots.length : 3}`;
+            this.container.appendChild(counter);
+
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; cursor: pointer;';
+            overlay.addEventListener('click', (e) => {
+                if (this.submitted) return;
+                const rect = overlay.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 800;
+                const y = ((e.clientY - rect.top) / rect.height) * 600;
+
+                SoundEffects.playClick();
+                this.addMarker(x, y);
+                if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+            });
+            this.container.appendChild(overlay);
+        }
+
+        addMarker(x, y, isCorrect = false) {
+            const marker = document.createElement('div');
+            marker.className = 'r3-marker' + (isCorrect ? ' correct-marker' : '');
+            marker.style.left = (x / 800 * 100) + '%';
+            marker.style.top = (y / 600 * 100) + '%';
+            
+            if (!isCorrect && !this.submitted) {
+                marker.style.pointerEvents = 'auto';
+                marker.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (this.submitted) return;
+                    marker.remove();
+                    this.clickedPts = this.clickedPts.filter(pt => pt.x !== x || pt.y !== y);
+                    this.updateCounter();
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                });
+            }
+
+            this.clickedPts.push({ x, y });
+            this.container.appendChild(marker);
+            this.updateCounter();
+        }
+
+        updateCounter() {
+            const counter = document.getElementById('r3-hotspots-counter');
+            if (counter) {
+                const total = this.caseData.hotspots ? this.caseData.hotspots.length : 3;
+                const count = this.container.querySelectorAll('.r3-marker:not(.correct-marker)').length;
+                counter.textContent = `Đã chọn: ${count} / ${total}`;
+            }
+        }
+
+        getAnswerPayload() {
+            const markers = this.container.querySelectorAll('.r3-marker:not(.correct-marker)');
+            const coords = [];
+            markers.forEach(m => {
+                const x = parseFloat(m.style.left) / 100 * 800;
+                const y = parseFloat(m.style.top) / 100 * 600;
+                coords.push({ x, y });
+            });
+            return coords;
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            this.container.querySelectorAll('.r3-marker:not(.correct-marker)').forEach(m => m.remove());
+            
+            if (correctDetails && correctDetails.hotspots) {
+                correctDetails.hotspots.forEach(h => {
+                    const marker = document.createElement('div');
+                    marker.className = 'r3-marker correct-marker';
+                    marker.style.left = (h.x / 800 * 100) + '%';
+                    marker.style.top = (h.y / 600 * 100) + '%';
+                    this.container.appendChild(marker);
+                });
+            }
+        }
+    }
+
+    // ── Sequence Builder Handler (Vòng 4) ──
+    class SequenceBuilderHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.events = [...(caseData.events || [])];
+            for (let i = this.events.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.events[i], this.events[j]] = [this.events[j], this.events[i]];
+            }
+        }
+
+        render() {
+            super.render();
+            const wrapper = document.createElement('div');
+            wrapper.className = 'r4-sequence-container';
+            this.listEl = wrapper;
+            this.renderItems();
+            this.container.appendChild(wrapper);
+        }
+
+        renderItems() {
+            this.listEl.innerHTML = '';
+            this.events.forEach((ev, idx) => {
+                const item = document.createElement('div');
+                item.className = 'r4-sequence-item';
+                item.innerHTML = `
+                    <span>${idx + 1}. ${ev.label}</span>
+                    <span class="r3-timeline-arrows">
+                        <button class="r3-btn-arrow" data-dir="up" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                        <button class="r3-btn-arrow" data-dir="down" data-idx="${idx}" ${idx === this.events.length - 1 ? 'disabled' : ''}>▼</button>
+                    </span>`;
+                this.listEl.appendChild(item);
+            });
+            this.listEl.querySelectorAll('.r3-btn-arrow').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (this.submitted) return;
+                    const i = parseInt(e.target.dataset.idx);
+                    const dir = e.target.dataset.dir;
+                    if (dir === 'up' && i > 0) {
+                        [this.events[i], this.events[i - 1]] = [this.events[i - 1], this.events[i]];
+                    } else if (dir === 'down' && i < this.events.length - 1) {
+                        [this.events[i], this.events[i + 1]] = [this.events[i + 1], this.events[i]];
+                    }
+                    this.renderItems();
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                });
+            });
+        }
+
+        getAnswerPayload() {
+            return this.events.map(e => e.id);
+        }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (Array.isArray(correctDetails)) {
+                const correctMap = {};
+                correctDetails.forEach((id, i) => correctMap[id] = i);
+                this.listEl.querySelectorAll('.r4-sequence-item').forEach(item => {
+                    const idx = parseInt(item.querySelector('span').textContent);
+                    const evId = this.events[idx - 1]?.id;
+                    if (evId && correctMap[evId] === idx - 1) {
+                        item.classList.add('correct-item');
+                    }
+                });
+            }
+        }
+    }
+
+    // ── Image Comparison Handler (Vòng 4) ──
+    class ImageComparisonHandler extends BaseInteractionHandler {
+        constructor(container, caseData, onAnswerChange) {
+            super(container, caseData, onAnswerChange);
+            this.clickCoord = null;
+            this.modView = null;
+        }
+
+        render() {
+            super.render();
+            const comp = document.createElement('div');
+            comp.className = 'r4-comparison-container';
+
+            // Left: original
+            const origPanel = document.createElement('div');
+            origPanel.className = 'r4-comparison-panel';
+            origPanel.innerHTML = `<div class="r4-comparison-label">Bản gốc</div>
+                <div class="r4-comparison-view"><img src="/static/images/${this.caseData.image_left || this.caseData.image}" alt="Original" /></div>`;
+
+            // Right: modified (clickable)
+            const modPanel = document.createElement('div');
+            modPanel.className = 'r4-comparison-panel';
+            const label = document.createElement('div');
+            label.className = 'r4-comparison-label';
+            label.textContent = 'Bản đã sửa đổi';
+            modPanel.appendChild(label);
+
+            const view = document.createElement('div');
+            view.className = 'r4-comparison-view';
+            view.style.cursor = 'crosshair';
+            view.style.position = 'relative';
+            const img = document.createElement('img');
+            img.src = `/static/images/${this.caseData.image_right || this.caseData.image}`;
+            view.appendChild(img);
+
+            view.addEventListener('click', (e) => {
+                if (this.submitted) return;
+                const rect = view.getBoundingClientRect();
+                const x = Math.round((e.clientX - rect.left) / rect.width * 800);
+                const y = Math.round((e.clientY - rect.top) / rect.height * 600);
+                this.clickCoord = { x, y };
+                this.drawMarker(view, x, y);
+                if (this.onAnswerChange) this.onAnswerChange(this.clickCoord);
+                SoundEffects.playClick();
+            });
+
+            modPanel.appendChild(view);
+            comp.appendChild(origPanel);
+            comp.appendChild(modPanel);
+            this.container.appendChild(comp);
+            this.modView = view;
+        }
+
+        drawMarker(view, x, y, isCorrect = false) {
+            const existing = view.querySelector('.r3-marker');
+            if (existing) existing.remove();
+            const marker = document.createElement('div');
+            marker.className = 'r3-marker' + (isCorrect ? ' correct-marker' : '');
+            marker.style.left = (x / 800 * 100) + '%';
+            marker.style.top = (y / 600 * 100) + '%';
+            marker.style.position = 'absolute';
+            view.appendChild(marker);
+        }
+
+        getAnswerPayload() { return this.clickCoord; }
+
+        showCorrectAnswer(correctDetails) {
+            this.disable();
+            if (correctDetails && correctDetails.x !== undefined && this.modView) {
+                this.drawMarker(this.modView, correctDetails.x, correctDetails.y, true);
+            }
+        }
+    }
 
     // Initialization
     function init() {
@@ -277,10 +1100,9 @@ const resCorrect = document.getElementById('res-correct');
             updateLeaderboard(players);
             updateMyTeamState(players);
             
-            // Check if all players ready (excluding host)
+            // Host có thể bắt đầu khi tất cả người chơi (kể cả host) đã chọn đội và sẵn sàng
             if (window.GAME_CONFIG.isHost) {
-                const playersToCheck = players.filter(p => !p.is_host);
-                const allReady = playersToCheck.length > 0 && playersToCheck.every(p => p.ready && p.team);
+                const allReady = players.length > 0 && players.every(p => p.ready && p.team);
                 if (allReady) {
                     btnStart.classList.remove('hidden');
                 } else {
@@ -343,14 +1165,19 @@ const resCorrect = document.getElementById('res-correct');
             setTimeout(() => Confetti.burst(), 1000);
         });
 
+        socket.on('show_scene', (data) => {
+            showSceneIntro(data);
+        });
+
         socket.on('game_started', (data) => {
-            showScreen('game');
-            if (window.GAME_CONFIG.isHost) {
-                document.querySelector('.game-layout').classList.add('hidden');
-                document.getElementById('host-dashboard').classList.remove('hidden');
+            stopSceneCountdown();
+            const shouldShowRoundIntro = Boolean(data.tournament_mode) && Number(data.round) === 1;
+            if (shouldShowRoundIntro) {
+                showRoundIntro(data);
             } else {
-                document.querySelector('.game-layout').classList.remove('hidden');
-                document.getElementById('host-dashboard').classList.add('hidden');
+                showScreen('game');
+                document.querySelector('.game-layout')?.classList.remove('hidden');
+                document.getElementById('host-dashboard')?.classList.add('hidden');
             }
             tournamentMode = Boolean(data.tournament_mode);
             if (data.round) {
@@ -365,7 +1192,6 @@ const resCorrect = document.getElementById('res-correct');
                 fifty_fifty: lifelines.includes('fifty_fifty'),
                 hint: lifelines.includes('hint')
             };
-// Update lifeline button states
             if (!currentLifelines.fifty_fifty) {
                 btn5050.disabled = true;
                 btn5050.style.opacity = '0.3';
@@ -379,46 +1205,146 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('new_question', (data) => {
-            currentAnswersProgress = currentPlayers.filter(p => !p.is_host).map(p => ({
+            stopRoundIntroCountdown();
+            showScreen('game');
+            hasAnswered = false;
+            
+            currentAnswersProgress = currentPlayers.map(p => ({
                 sid: p.sid,
                 name: p.username,
                 team: p.team,
                 answered: false
             }));
+
+            const isRound3 = Number(data.round) === 3;
             
-            displayQuestion(data);
-            
-            if (window.GAME_CONFIG.isHost) {
-                const hostQArticle = document.getElementById('host-q-article');
-                const hostQText = document.getElementById('host-q-text');
-                const hostQCorrect = document.getElementById('host-q-correct-answer');
+            if (isRound3) {
+                round3GameLayout.classList.remove('hidden');
+                document.querySelector('.game-layout').classList.add('hidden');
                 
-                if (hostQArticle) hostQArticle.textContent = data.article || "NĐ 13/2023";
-                if (hostQText) hostQText.textContent = data.question;
+                r3CaseTitle.textContent = data.title || "Vụ Án Trinh Thám";
+                r3Instruction.textContent = data.question || "";
+                r3CaseImage.src = `/static/images/${data.image}`;
+                r3Timer.textContent = data.time_per_question || 30;
                 
-                if (hostQCorrect && data.correct_answer && data.options) {
-                    const correctLetter = data.correct_answer.toUpperCase();
-                    const correctIdx = ['A', 'B', 'C', 'D'].indexOf(correctLetter);
-                    const correctText = data.options[correctIdx] || '';
-                    hostQCorrect.innerHTML = `🟢 Đáp án đúng: <strong>${correctLetter}. ${correctText}</strong>`;
+                btnR3Submit.classList.remove('hidden');
+                btnR3Submit.disabled = false;
+                btnR3Next.classList.add('hidden');
+
+                if (r3InteractionLayer) {
+                    const type = data.type;
+                    if (type === 'click') {
+                        r3CurrentHandler = new ClickAreaHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'image_hotspot') {
+                        r3CurrentHandler = new ImageHotspotHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'highlight') {
+                        r3CurrentHandler = new HighlightRegionHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'drag_drop') {
+                        r3CurrentHandler = new DragDropHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'connect') {
+                        r3CurrentHandler = new ConnectObjectsHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'timeline') {
+                        r3CurrentHandler = new TimelineOrderingHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'text_input') {
+                        r3CurrentHandler = new TextInputHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'multiple_hotspots') {
+                        r3CurrentHandler = new MultipleHotspotsHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'sequence_builder') {
+                        r3CurrentHandler = new SequenceBuilderHandler(r3InteractionLayer, data, () => {});
+                    } else if (type === 'image_comparison') {
+                        r3CurrentHandler = new ImageComparisonHandler(r3InteractionLayer, data, () => {});
+                    } else {
+                        r3CurrentHandler = null;
+                        r3InteractionLayer.innerHTML = '';
+                    }
+                    if (r3CurrentHandler) r3CurrentHandler.render();
                 }
-                
+            } else {
+                round3GameLayout.classList.add('hidden');
+                document.querySelector('.game-layout')?.classList.remove('hidden');
+                displayQuestion(data);
+            }
+
+            if (window.GAME_CONFIG.isHost) {
+                document.getElementById('host-dashboard')?.classList.add('hidden');
                 updateHostProgressDashboard();
+            }
+        });
+
+        socket.on('reading_tick', (data) => {
+            const remaining = Number(data.remaining || 0);
+            gameTimer.textContent = remaining;
+            gameTimer.classList.remove('danger');
+            gameTimer.classList.add('warning');
+            if (qArticle) {
+                qArticle.textContent = `Đọc câu hỏi: ${remaining}s`;
+            }
+        });
+
+        socket.on('answer_phase_started', (data) => {
+            isAnswerLocked = false;
+            currentTimeLimit = Number(data.seconds || 5);
+            gameTimer.textContent = currentTimeLimit;
+            gameTimer.classList.remove('warning');
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.remove('disabled');
+                btn.disabled = false;
+            });
+            if (qArticle) {
+                qArticle.textContent = 'Chọn đáp án';
             }
         });
 
         socket.on('timer_tick', (timeLeft) => {
             gameTimer.textContent = timeLeft;
+            if (r3Timer) r3Timer.textContent = timeLeft;
             SoundEffects.playTick();
             if (timeLeft <= 5) {
                 gameTimer.classList.add('danger');
+                if (r3Timer) r3Timer.classList.add('danger');
             } else {
                 gameTimer.classList.remove('danger');
                 gameTimer.classList.remove('warning');
+                if (r3Timer) r3Timer.classList.remove('danger');
             }
         });
 
         socket.on('answer_result', (data) => {
+            const isRound3 = data.round === 3 || (currentRound === 3);
+
+            if (isRound3) {
+                // Round 3 detective result
+                const isCorrect = data.is_correct;
+                const score = data.score || 0;
+                const partial = data.partial_score || 0;
+
+                if (isCorrect) {
+                    SoundEffects.playCorrect();
+                    Confetti.burst();
+                } else {
+                    SoundEffects.playWrong();
+                }
+
+                if (r3CurrentHandler) {
+                    r3CurrentHandler.showCorrectAnswer(data.correct_details);
+                }
+
+                btnR3Submit.classList.add('hidden');
+                if (window.GAME_CONFIG.isHost) {
+                    btnR3Next.classList.remove('hidden');
+                }
+
+                expTitle.textContent = isCorrect ? `✅ Chính xác! +${score}đ` : (partial > 0 ? `⚡ Bán phần! +${partial}đ` : `❌ Sai rồi!`);
+                expText.textContent = data.explanation || '';
+                expPopup.className = `explanation-popup show ${isCorrect ? 'correct' : 'wrong'}`;
+                setTimeout(() => {
+                    expPopup.classList.remove('show');
+                }, 4000);
+                return;
+            }
+
+            // Normal rounds
+            if (!data.correct_answer) return;
             const correctLetter = data.correct_answer.toLowerCase();
             const correctIdx = ['a', 'b', 'c', 'd'].indexOf(correctLetter);
             
@@ -468,7 +1394,8 @@ const resCorrect = document.getElementById('res-correct');
                 streakDisplay.classList.add('streak-wrong');
             }
             streakCount.textContent = data.streak;
-if (data.new_badges && data.new_badges.length > 0) {
+            if (r3Streak) r3Streak.textContent = data.streak;
+            if (data.new_badges && data.new_badges.length > 0) {
                 showBadgeUnlock(data.new_badges[0]);
             }
         });
@@ -502,6 +1429,27 @@ if (data.new_badges && data.new_badges.length > 0) {
         socket.on('leaderboard_update', (data) => {
             if (data.players) {
                 updateLeaderboard(data.players, data.team_rankings);
+                
+                const me = data.players.find(p => p.sid === socket.id);
+                if (me) {
+                    if (r3Score) r3Score.textContent = me.score || 0;
+                }
+                
+                if (data.team_rankings && myTeam) {
+                    const myTeamRankIdx = data.team_rankings.findIndex(t => Number(t.team) === Number(myTeam));
+                    if (myTeamRankIdx !== -1) {
+                        if (r3Rank) r3Rank.textContent = myTeamRankIdx + 1;
+                        if (r3MyTeam) r3MyTeam.textContent = `Đội ${myTeam}`;
+                        const teamData = data.team_rankings[myTeamRankIdx];
+                        if (r3Score && teamData) r3Score.textContent = teamData.score || 0;
+                    }
+                } else if (data.players) {
+                    const sortedPlayers = [...data.players].sort((a,b) => b.score - a.score);
+                    const myRankIdx = sortedPlayers.findIndex(p => p.sid === socket.id);
+                    if (myRankIdx !== -1 && r3Rank) {
+                        r3Rank.textContent = myRankIdx + 1;
+                    }
+                }
             }
         });
 
@@ -548,9 +1496,245 @@ if (data.new_badges && data.new_badges.length > 0) {
             showToast('Trò chơi đã được quản trị viên reset.', 'warning');
         });
 
+        // ══════════════════════════════════════════════════════════
+        // ROUND 4 — CYBER INCIDENT RESPONSE SOCKET LISTENERS
+        // ══════════════════════════════════════════════════════════
+
+        socket.on('new_round4_mission', (data) => {
+            // Show Round 4 layout, hide others
+            if (round4GameLayout) round4GameLayout.classList.remove('hidden');
+            if (round3GameLayout) round3GameLayout.classList.add('hidden');
+            document.querySelector('.game-layout')?.classList.add('hidden');
+
+            // Top bar
+            if (r4IncidentTitle) r4IncidentTitle.textContent = data.incident_title || 'Sự cố';
+            if (r4ActiveTeam) r4ActiveTeam.textContent = `Đội ${myTeam}`;
+            if (r4CurrentMissionIndex) r4CurrentMissionIndex.textContent = data.mission_index || 1;
+            if (r4Timer) {
+                r4Timer.textContent = data.time_limit || 20;
+                r4Timer.classList.remove('danger');
+            }
+
+            // Instruction
+            if (r4Instruction) r4Instruction.textContent = data.instruction || '';
+
+            // Image
+            if (r4CaseImage) r4CaseImage.src = `/static/images/${data.image || ''}`;
+
+            // Active player
+            r4ActivePlayerSid = data.active_player_sid;
+            r4HintUsed = false;
+            const iAmActive = (socket.id === r4ActivePlayerSid);
+
+            // Spectator overlay
+            if (r4SpectatorOverlay) {
+                if (iAmActive) {
+                    r4SpectatorOverlay.classList.add('hidden');
+                } else {
+                    r4SpectatorOverlay.classList.remove('hidden');
+                    if (r4ActivePlayerNameOverlay) {
+                        r4ActivePlayerNameOverlay.textContent = data.active_player_name || '...';
+                    }
+                }
+            }
+
+            // Buttons
+            if (btnR4Submit) {
+                btnR4Submit.classList.toggle('hidden', !iAmActive);
+                btnR4Submit.disabled = false;
+            }
+            if (btnR4Hint) {
+                btnR4Hint.classList.toggle('hidden', !iAmActive);
+                btnR4Hint.disabled = false;
+                btnR4Hint.textContent = 'Gợi ý';
+            }
+
+            // Team score
+            if (r4TeamScore) r4TeamScore.textContent = data.team_score || 0;
+
+            // Teammate progress (left panel)
+            renderR4TeammateList(data.teammate_progress || []);
+
+            // Opponent progress (right panel)
+            renderR4OpponentProgress(data.opponent_progress);
+
+            // Interaction handler
+            r4CurrentHandler = null;
+            if (r4InteractionLayer) {
+                r4InteractionLayer.innerHTML = '';
+                const type = data.type;
+                const handlerContainer = r4InteractionLayer;
+                const onAnswerChange = () => {};
+
+                if (type === 'click') {
+                    r4CurrentHandler = new ClickAreaHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'image_hotspot') {
+                    r4CurrentHandler = new ImageHotspotHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'highlight') {
+                    r4CurrentHandler = new HighlightRegionHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'drag_drop') {
+                    r4CurrentHandler = new DragDropHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'connect') {
+                    r4CurrentHandler = new ConnectObjectsHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'timeline') {
+                    r4CurrentHandler = new TimelineOrderingHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'text_input') {
+                    r4CurrentHandler = new TextInputHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'multiple_hotspots') {
+                    r4CurrentHandler = new MultipleHotspotsHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'sequence_builder') {
+                    r4CurrentHandler = new SequenceBuilderHandler(handlerContainer, data, onAnswerChange);
+                } else if (type === 'image_comparison') {
+                    r4CurrentHandler = new ImageComparisonHandler(handlerContainer, data, onAnswerChange);
+                }
+
+                if (r4CurrentHandler) {
+                    r4CurrentHandler.render();
+                    if (!iAmActive) {
+                        r4CurrentHandler.disable();
+                    }
+                }
+            }
+
+            // Host vẫn chơi vòng 4 như người chơi thường
+        });
+
+        socket.on('round4_timer_tick', (data) => {
+            const remaining = Number(data.remaining || 0);
+            if (r4Timer) {
+                r4Timer.textContent = remaining;
+                if (remaining <= 5) {
+                    r4Timer.classList.add('danger');
+                } else {
+                    r4Timer.classList.remove('danger');
+                }
+            }
+            SoundEffects.playTick();
+        });
+
+        socket.on('round4_mission_result', (data) => {
+            const isCorrect = data.is_correct;
+            const score = data.score || 0;
+            const explanation = data.explanation || '';
+
+            // Show result feedback
+            if (isCorrect) {
+                SoundEffects.playCorrect();
+                showToast(`✅ Nhiệm vụ ${data.mission_index} hoàn thành! +${score} điểm`, 'success');
+            } else {
+                SoundEffects.playWrong();
+                showToast(`❌ Nhiệm vụ ${data.mission_index} thất bại. ${explanation}`, 'error');
+            }
+
+            // Show correct answer
+            if (r4CurrentHandler && data.correct_details) {
+                r4CurrentHandler.showCorrectAnswer(data.correct_details);
+            }
+
+            // Update team score
+            const currentScore = parseInt(r4TeamScore?.textContent || '0');
+            if (r4TeamScore) r4TeamScore.textContent = currentScore + score;
+
+            // Disable controls
+            if (btnR4Submit) btnR4Submit.disabled = true;
+            if (btnR4Hint) btnR4Hint.disabled = true;
+        });
+
+        socket.on('round4_hint_result', (data) => {
+            showToast(`💡 Gợi ý NV${data.mission_index}: ${data.hint}`, 'info', 5000);
+        });
+
+        socket.on('round4_game_over', (data) => {
+            if (round4GameLayout) round4GameLayout.classList.add('hidden');
+
+            const rankings = data.rankings || [];
+            const champion = data.champion_team;
+            const mvp = data.mvp || {};
+
+            // Show winner banner
+            if (tournamentWinnerBanner) tournamentWinnerBanner.classList.remove('hidden');
+            if (winnerTeamName) winnerTeamName.textContent = `Đội ${champion}`;
+            if (mvpPlayerName) mvpPlayerName.textContent = `${mvp.avatar || '🏆'} ${mvp.name || ''}`;
+            if (mvpPlayerScore) mvpPlayerScore.textContent = `${mvp.score || 0} điểm`;
+
+            showScreen('results');
+
+            // Build results display
+            if (podium) {
+                podium.innerHTML = '';
+                rankings.forEach((team, idx) => {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const medal = medals[idx] || `#${idx + 1}`;
+                    const card = document.createElement('div');
+                    card.className = `podium-card ${idx === 0 ? 'champion' : ''}`;
+                    const membersHTML = (team.members || [])
+                        .map(m => `<span class="r4-member-badge">${m.avatar || '👤'} ${m.name}: ${m.score}đ</span>`)
+                        .join(' ');
+                    card.innerHTML = `
+                        <div class="podium-medal">${medal}</div>
+                        <div class="podium-team">${team.name}</div>
+                        <div class="podium-score">${team.score} điểm</div>
+                        <div class="podium-stats">
+                            <span>Chính xác: ${team.accuracy?.toFixed(0) || 0}%</span>
+                            <span>TB thời gian: ${team.avg_time?.toFixed(1) || 0}s</span>
+                            <span>NV hoàn hảo: ${team.perfect_missions || 0}/5</span>
+                        </div>
+                        <div class="podium-members">${membersHTML}</div>
+                    `;
+                    podium.appendChild(card);
+                });
+            }
+
+            if (resScore) resScore.textContent = rankings.find(r => r.team === myTeam)?.score || 0;
+            if (resCorrect) resCorrect.textContent = rankings.find(r => r.team === myTeam)?.perfect_missions || 0;
+
+            Confetti.burst();
+            setTimeout(() => Confetti.burst(), 600);
+            setTimeout(() => Confetti.burst(), 1200);
+        });
+
+        socket.on('host_round4_update', (data) => {
+            if (!window.GAME_CONFIG.isHost) return;
+            const hostR4Title = document.getElementById('host-r4-incident-title');
+            const hostR4Progress = document.getElementById('host-r4-teams-progress');
+            if (hostR4Title) hostR4Title.textContent = data.incident_title || '';
+            if (hostR4Progress) {
+                hostR4Progress.innerHTML = '';
+                const states = data.team_states || {};
+                for (const [teamId, ts] of Object.entries(states)) {
+                    const card = document.createElement('div');
+                    card.className = 'host-team-progress-card';
+                    const missionDots = (ts.scores || []).map((s, i) => {
+                        let cls = 'waiting';
+                        if (i < (ts.current_mission - 1)) cls = s > 0 ? 'correct' : 'wrong';
+                        else if (i === (ts.current_mission - 1)) cls = 'current';
+                        return `<span class="r4-dot ${cls}">NV${i+1}</span>`;
+                    }).join('');
+                    card.innerHTML = `
+                        <div class="host-team-progress-header">
+                            <span class="host-team-name">Đội ${teamId} ${ts.completed ? '✅' : ''}</span>
+                            <span class="host-team-score">${ts.score} điểm</span>
+                        </div>
+                        <div class="host-team-members-progress">
+                            <span>NV: ${ts.current_mission}/5 | Đang chơi: ${ts.active_player}</span>
+                        </div>
+                        <div style="display:flex;gap:6px;margin-top:6px">${missionDots}</div>
+                    `;
+                    hostR4Progress.appendChild(card);
+                }
+            }
+            // Make host R4 section visible
+            const hostR4Section = document.getElementById('host-round4-section');
+            if (hostR4Section) hostR4Section.classList.remove('hidden');
+        });
+
         socket.on('error', (data) => {
             const msg = typeof data === 'string' ? data : (data.message || 'Lỗi không xác định');
             showToast(msg, 'error');
+            if (btnStart) {
+                btnStart.disabled = false;
+                btnStart.textContent = 'Bắt đầu Game';
+            }
         });
     }
 
@@ -585,9 +1769,8 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             }
         }
 
-        if (window.GAME_CONFIG.isHost) {
-            if (btnReady) btnReady.classList.add('hidden');
-            if (selectedTeamStatus) selectedTeamStatus.textContent = 'Bạn là Quản trị viên (Host)';
+        if (window.GAME_CONFIG.isHost && btnStart) {
+            btnStart.classList.add('hidden');
         }
 
         // Mode selector (Host only)
@@ -633,12 +1816,11 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
                 teamSelector.classList.add('team-locked');
             }
             teamSelector.addEventListener('click', (e) => {
-                if (window.GAME_CONFIG.isHost) return;
                 const card = e.target.closest('.team-card');
                 if (!card || card.classList.contains('full') || teamLocked) return;
 
                 SoundEffects.playClick();
-socket.emit('select_team', { team: Number(card.dataset.team) });
+                socket.emit('select_team', { team: Number(card.dataset.team) });
             });
         }
 
@@ -646,6 +1828,8 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
         if (btnStart) {
             btnStart.addEventListener('click', () => {
                 SoundEffects.playClick();
+                btnStart.disabled = true;
+                btnStart.textContent = 'Đang khởi động...';
                 socket.emit('start_game');
             });
         }
@@ -656,7 +1840,7 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
         // Answer clicks
         answersContainer.addEventListener('click', (e) => {
             const btn = e.target.closest('.answer-btn');
-            if (!btn || hasAnswered || btn.classList.contains('disabled') || btn.classList.contains('eliminated')) return;
+            if (!btn || isAnswerLocked || hasAnswered || btn.classList.contains('disabled') || btn.classList.contains('eliminated')) return;
 
             SoundEffects.playClick();
             hasAnswered = true;
@@ -709,10 +1893,70 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
                 }
             });
         }
+
+        // Round 3 controls
+        if (btnR3Submit) {
+            btnR3Submit.addEventListener('click', () => {
+                if (!r3CurrentHandler || r3CurrentHandler.submitted) return;
+                SoundEffects.playClick();
+                const payload = r3CurrentHandler.getAnswerPayload();
+                if (!payload) {
+                    showToast('Hãy thực hiện tương tác trước khi nộp!', 'warning');
+                    return;
+                }
+                r3CurrentHandler.disable();
+                btnR3Submit.disabled = true;
+                const timerVal = parseInt(r3Timer ? r3Timer.textContent : '0') || 0;
+                socket.emit('submit_answer', {
+                    round3_answer: payload,
+                    time_taken: (currentTimeLimit || 30) - timerVal
+                });
+            });
+        }
+
+        if (btnR3Next) {
+            btnR3Next.addEventListener('click', () => {
+                if (!window.GAME_CONFIG.isHost) return;
+                SoundEffects.playClick();
+                socket.emit('next_round3_case');
+            });
+        }
+
+        // Round 4 controls
+        if (btnR4Submit) {
+            btnR4Submit.addEventListener('click', () => {
+                if (!r4CurrentHandler || r4CurrentHandler.submitted) return;
+                SoundEffects.playClick();
+                const payload = r4CurrentHandler.getAnswerPayload();
+                if (!payload) {
+                    showToast('Hãy thực hiện tương tác trước khi nộp!', 'warning');
+                    return;
+                }
+                r4CurrentHandler.disable();
+                btnR4Submit.disabled = true;
+                const timerVal = parseInt(r4Timer ? r4Timer.textContent : '0') || 0;
+                socket.emit('submit_answer', {
+                    round3_answer: payload,
+                    time_taken: 20 - timerVal
+                });
+            });
+        }
+
+        if (btnR4Hint) {
+            btnR4Hint.addEventListener('click', () => {
+                if (r4HintUsed) return;
+                SoundEffects.playClick();
+                r4HintUsed = true;
+                btnR4Hint.disabled = true;
+                btnR4Hint.textContent = 'Đã dùng gợi ý';
+                socket.emit('use_lifeline', { type: 'hint' });
+            });
+        }
     }
 
     function displayQuestion(data) {
         hasAnswered = false;
+        isAnswerLocked = Boolean(data.answer_locked);
         expPopup.classList.remove('show');
         hintPopup.classList.add('hidden');
 
@@ -724,7 +1968,9 @@ socket.emit('select_team', { team: Number(card.dataset.team) });
             updateRoundUI(data);
         }
 
-        qArticle.textContent = data.article || "NĐ 13/2023";
+        qArticle.textContent = isAnswerLocked
+            ? `Đọc câu hỏi: ${data.read_seconds || 8}s`
+            : (data.article || "NĐ 13/2023");
         qText.textContent = data.question;
         const roundLabel = tournamentMode && currentRound
             ? `[${TOURNAMENT_ROUNDS[currentRound]?.name || 'Vòng ' + currentRound}] `
@@ -743,7 +1989,8 @@ answersContainer.innerHTML = '';
         const labels = ['A', 'B', 'C', 'D'];
         data.options.forEach((opt, idx) => {
             const btn = document.createElement('button');
-            btn.className = 'answer-btn';
+            btn.className = `answer-btn ${isAnswerLocked ? 'disabled' : ''}`;
+            btn.disabled = isAnswerLocked;
             btn.dataset.idx = idx;
             btn.innerHTML = `
                 <span class="answer-label">${labels[idx]}</span>
@@ -755,7 +2002,7 @@ answersContainer.innerHTML = '';
 
     function updatePlayerList(players) {
         lobbyPlayers.innerHTML = '';
-        playerCount.textContent = `${players.length}/50`;
+        playerCount.textContent = `${players.length}/60`;
         
         players.forEach(p => {
             const el = document.createElement('div');
@@ -779,7 +2026,8 @@ answersContainer.innerHTML = '';
         myTeam = me.team || null;
         isEliminated = Boolean(me.is_eliminated);
         if (selectedTeamStatus) {
-            selectedTeamStatus.textContent = myTeam ? `Bạn đang ở Đội ${myTeam}` : 'Chưa chọn đội';
+            const hostLabel = me.is_host ? ' · Host' : '';
+            selectedTeamStatus.textContent = myTeam ? `Bạn đang ở Đội ${myTeam}${hostLabel}` : 'Chưa chọn đội';
         }
 
         if (btnReady) {
@@ -1030,19 +2278,19 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         return div;
     }
 
-    function showToast(message, type = 'info') {
+    function showToast(message, type = 'info', duration = 3500) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
         toast.style.cssText = `
             position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--primary)'};
+            background: ${type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : type === 'warning' ? 'var(--accent)' : 'var(--primary)'};
             color: #fff; padding: 12px 24px; border-radius: 12px;
             font-weight: 600; z-index: 9999; animation: slideUp 0.3s ease;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3); max-width: 80vw; text-align: center;
         `;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
+        setTimeout(() => toast.remove(), duration);
     }
 
     function showBadgeUnlock(badge) {
@@ -1052,13 +2300,109 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         badgeModal.classList.add('show');
     }
 
+    function showSceneIntro(data = {}) {
+        const duration = Number(data.seconds || 12);
+        let remaining = duration;
+
+        stopSceneCountdown();
+        if (sceneCountdown) {
+            sceneCountdown.textContent = remaining;
+        }
+        showScreen('scene');
+
+        sceneCountdownTimer = setInterval(() => {
+            remaining = Math.max(0, remaining - 1);
+            if (sceneCountdown) {
+                sceneCountdown.textContent = remaining;
+            }
+            if (remaining <= 0) {
+                stopSceneCountdown();
+            }
+        }, 1000);
+    }
+
+    function stopSceneCountdown() {
+        if (sceneCountdownTimer) {
+            clearInterval(sceneCountdownTimer);
+            sceneCountdownTimer = null;
+        }
+    }
+
+    function showRoundIntro(data = {}) {
+        let remaining = Number(data.round_intro_seconds || 5);
+
+        stopRoundIntroCountdown();
+        if (roundIntroCountdown) {
+            roundIntroCountdown.textContent = remaining;
+        }
+        showScreen('round-intro');
+
+        roundIntroTimer = setInterval(() => {
+            remaining = Math.max(0, remaining - 1);
+            if (roundIntroCountdown) {
+                roundIntroCountdown.textContent = remaining;
+            }
+            if (remaining <= 0) {
+                stopRoundIntroCountdown();
+                showScreen('game');
+            }
+        }, 1000);
+    }
+
+    function stopRoundIntroCountdown() {
+        if (roundIntroTimer) {
+            clearInterval(roundIntroTimer);
+            roundIntroTimer = null;
+        }
+    }
+
     function showScreen(name) {
         screenLobby.classList.remove('active');
+        if (screenScene) screenScene.classList.remove('active');
+        if (screenRoundIntro) screenRoundIntro.classList.remove('active');
         screenGame.classList.remove('active');
         if (screenBreak) screenBreak.classList.remove('active');
         screenResults.classList.remove('active');
 
+        // Hide special round layouts
+        if (round3GameLayout) round3GameLayout.classList.add('hidden');
+        if (round4GameLayout) round4GameLayout.classList.add('hidden');
+
         document.getElementById(`screen-${name}`).classList.add('active');
+    }
+
+    // ── Round 4 UI Helpers ──
+    function renderR4TeammateList(teammateProgress) {
+        if (!r4TeammateList) return;
+        r4TeammateList.innerHTML = '';
+        teammateProgress.forEach(tp => {
+            const item = document.createElement('div');
+            const statusIcon = tp.status === 'completed' ? '✅' : (tp.status === 'current' ? '🎮' : '⏳');
+            const activeClass = tp.status === 'current' ? 'r4-teammate-active' : '';
+            const completedClass = tp.status === 'completed' ? 'r4-teammate-done' : '';
+            item.className = `r4-teammate-item ${activeClass} ${completedClass}`;
+            item.innerHTML = `
+                <span class="r4-teammate-name">${statusIcon} ${tp.player_name}</span>
+                <span class="r4-teammate-mission">NV${tp.mission_index}</span>
+                <span class="r4-teammate-score">${tp.score > 0 ? `+${tp.score}` : (tp.status === 'completed' ? '0' : '—')}</span>
+            `;
+            r4TeammateList.appendChild(item);
+        });
+    }
+
+    function renderR4OpponentProgress(oppData) {
+        if (!oppData) return;
+        if (r4OpponentTeamName) r4OpponentTeamName.textContent = `Đội ${oppData.team_id}`;
+        if (r4OpponentScore) r4OpponentScore.textContent = `${oppData.score || 0}đ`;
+        if (r4OpponentProgressDots) {
+            r4OpponentProgressDots.innerHTML = '';
+            (oppData.progress || []).forEach((status, i) => {
+                const dot = document.createElement('span');
+                dot.className = `r4-opp-dot ${status}`;
+                dot.textContent = `NV${i + 1}`;
+                r4OpponentProgressDots.appendChild(dot);
+            });
+        }
     }
 
     function updateHostProgressDashboard() {

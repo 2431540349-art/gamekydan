@@ -78,6 +78,12 @@ def home():
     return render_template("home-page.html", categories=cats, users=users)
 
 
+@pages.route("/solo")
+def solo():
+    """Solo mode disabled — redirect to multiplayer home."""
+    return redirect(url_for("main.home"))
+
+
 @pages.route("/lobby")
 def lobby():
     """Create or Join room form selection"""
@@ -362,4 +368,16 @@ def player_stats():
             'level': 'strong' if accuracy >= 80 else ('ok' if accuracy >= 50 else 'weak')
         })
     return jsonify({'stats': result})
+
+
+@pages.route("/game-rules")
+def game_rules():
+    """Display the game rules page"""
+    return render_template("game-rules.html")
+
+
+@pages.route("/references")
+def references():
+    """Display the reference documents page with cybersecurity law information"""
+    return render_template("references.html")
 

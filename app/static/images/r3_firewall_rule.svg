@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<rect width="800" height="600" fill="#ecfdf5"/>
+<text x="40" y="45" font-family="Segoe UI,Arial" font-size="18" fill="#065f46" font-weight="700">Firewall Policy — Production Zone</text>
+<rect x="40" y="70" width="720" height="40" fill="#047857"/>
+<text x="100" y="96" font-family="Segoe UI,Arial" font-size="13" fill="#fff">Action</text><text x="220" y="96" font-family="Segoe UI,Arial" font-size="13" fill="#fff">Source</text><text x="380" y="96" font-family="Segoe UI,Arial" font-size="13" fill="#fff">Destination</text><text x="560" y="96" font-family="Segoe UI,Arial" font-size="13" fill="#fff">Port</text>
+<rect x="40" y="110" width="720" height="36" fill="#fff" stroke="#d1fae5"/><text x="60" y="133" font-size="12" fill="#334155">1 ALLOW</text><text x="220" y="133" font-size="12" fill="#334155">10.0.0.0/8</text><text x="380" y="133" font-size="12" fill="#334155">10.0.1.0/24</text><text x="560" y="133" font-size="12" fill="#334155">443</text>
+<rect x="40" y="146" width="720" height="36" fill="#fff" stroke="#d1fae5"/><text x="60" y="169" font-size="12" fill="#334155">2 ALLOW</text><text x="220" y="169" font-size="12" fill="#334155">192.168.0.0/16</text><text x="380" y="169" font-size="12" fill="#334155">192.168.1.10</text><text x="560" y="169" font-size="12" fill="#334155">22</text>
+<rect x="40" y="250" width="720" height="44" fill="#fef2f2" stroke="#fecaca" stroke-width="2"/>
+<text x="60" y="278" font-size="12" fill="#b91c1c" font-weight="700">3 ALLOW</text><text x="220" y="278" font-size="12" fill="#b91c1c">0.0.0.0/0 (ANY)</text><text x="380" y="278" font-size="12" fill="#b91c1c">0.0.0.0/0 (ANY)</text><text x="560" y="278" font-size="12" fill="#b91c1c">3389 RDP</text>
+</svg>

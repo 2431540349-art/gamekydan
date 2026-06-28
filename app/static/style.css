@@ -322,6 +322,219 @@ font-weight: 500;
     }
 }
 
+/* === INFO SECTIONS (Game Rules & References) === */
+.info-section {
+    padding: 3rem 2rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(245,250,255,1));
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    margin: 2rem 0;
+}
+
+.section-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 2rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+/* Game Rules Section */
+.game-rules-section .section-title {
+    margin-bottom: 2.5rem;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.rule-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s;
+}
+
+.rule-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.rule-card h3 {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.rule-card ul, .rule-card p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.rule-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.rule-card li {
+    padding: 0.4rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.rule-card li::before {
+    content: '→';
+    color: var(--primary);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.score-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.score-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(26,86,219,0.04);
+}
+
+.score-item.correct {
+    background: rgba(16,185,129,0.08);
+}
+
+.score-item.incorrect {
+    background: rgba(239,68,68,0.08);
+}
+
+.score-item.timeout {
+    background: rgba(245,158,11,0.08);
+}
+
+.score-icon {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.score-text {
+    flex: 1;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.score-points {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+/* References Section */
+.references-section {
+    background: linear-gradient(180deg, rgba(245,250,255,0.8), rgba(255,255,255,0.95));
+}
+
+.reference-subsection {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid rgba(26,86,219,0.1);
+}
+
+.reference-subsection:last-child {
+    border-bottom: none;
+}
+
+.reference-subsection h3 {
+    font-size: 1.5rem;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.reference-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.ref-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--primary-light);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s;
+}
+
+.ref-card:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--primary);
+}
+
+.ref-card h4 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+}
+
+.ref-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.ref-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ref-card li {
+    padding: 0.4rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.ref-card li::before {
+    content: '•';
+    color: var(--primary-light);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ref-card.info-highlight {
+    background: linear-gradient(135deg, rgba(245,158,11,0.05), rgba(255,255,255,0.8));
+    border-left-color: var(--accent);
+}
+
+.ref-card.info-highlight h4 {
+    color: var(--accent);
+}
+
 
 /* === BUTTONS === */
 .btn {
@@ -3357,6 +3570,33 @@ line-height: 1.25;
         padding: 0.7rem 1rem;
         font-size: 0.9rem;
     }
+
+    .info-section {
+        padding: 1.5rem 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .rules-grid,
+    .reference-cards {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .rule-card,
+    .ref-card {
+        padding: 1rem;
+    }
+
+    .reference-subsection h3 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+}
 
     .lobby-container,
     .game-container,

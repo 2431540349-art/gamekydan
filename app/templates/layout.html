@@ -53,16 +53,16 @@
             
             <nav class="nav-links" id="site-nav">
                 <a href="/">Trang chủ</a>
-                <a href="/game-rules">Quy tắc game</a>
+                <a href="#game-rules" class="smooth-scroll">Quy tắc game</a>
                 
                 <div class="dropdown-menu" id="docs-dropdown">
                     <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
                         Tài liệu tham khảo <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-content">
-                        <a href="/references#section-1">Luật An ninh mạng 2025</a>
-                        <a href="/references#section-2">Luật Bảo vệ DLCN 2025</a>
-                        <a href="/references#section-3">Nghị định 13/2023</a>
+                        <a href="#references-section-1" class="smooth-scroll">Luật An ninh mạng 2025</a>
+                        <a href="#references-section-2" class="smooth-scroll">Luật Bảo vệ DLCN 2025</a>
+                        <a href="#references-section-3" class="smooth-scroll">Nghị định 13/2023</a>
                     </div>
                 </div>
 
@@ -178,6 +178,32 @@
                     }
                 }, true);
             }
+
+            // Handle smooth scroll for anchor links
+            document.querySelectorAll('a.smooth-scroll').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const href = link.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        const targetId = href.substring(1);
+                        const targetElement = document.getElementById(targetId);
+                        
+                        if (targetElement) {
+                            // Close mobile menu if open
+                            if (siteNav && siteNav.classList.contains('is-open')) {
+                                siteNav.classList.remove('is-open');
+                                if (menuButton) {
+                                    menuButton.classList.remove('is-open');
+                                    menuButton.setAttribute('aria-expanded', 'false');
+                                }
+                            }
+                            
+                            // Smooth scroll to element
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }
+                });
+            });
         });
     </script>
     

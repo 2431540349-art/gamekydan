@@ -363,3 +363,15 @@ def player_stats():
         })
     return jsonify({'stats': result})
 
+
+@pages.route("/game-rules")
+def game_rules():
+    """Display the game rules page"""
+    return render_template("game-rules.html")
+
+
+@pages.route("/references")
+def references():
+    """Display the reference documents page with cybersecurity law information"""
+    return render_template("references.html")
+

@@ -218,6 +218,111 @@ font-weight: 500;
     }
 }
 
+/* === DROPDOWN MENU === */
+.dropdown-menu {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropdown-toggle:hover {
+    color: var(--primary);
+    background: rgba(26,86,219,0.06);
+}
+
+.dropdown-arrow {
+    display: inline-block;
+    font-size: 0.65rem;
+    transition: transform 0.3s;
+    line-height: 1;
+}
+
+.dropdown-toggle[aria-expanded="true"] .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    min-width: 220px;
+    background: rgba(255,255,255,0.98);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    flex-direction: column;
+    padding: 0.5rem 0;
+}
+
+.dropdown-content.show {
+    display: flex;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 0.75rem 1.25rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.dropdown-content a:hover {
+    background: rgba(26,86,219,0.06);
+    color: var(--primary);
+    padding-left: 1.5rem;
+}
+
+@media (max-width: 767px) {
+    .dropdown-menu {
+        width: 100%;
+    }
+
+    .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+    }
+
+    .dropdown-content {
+        position: static;
+        background: rgba(26,86,219,0.03);
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin-top: 0.5rem;
+        min-width: unset;
+    }
+
+    .dropdown-content a {
+        padding-left: 2rem;
+    }
+
+    .dropdown-content a:hover {
+        padding-left: 2.25rem;
+    }
+}
+
+
 /* === BUTTONS === */
 .btn {
     display: inline-flex;

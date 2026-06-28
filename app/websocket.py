@@ -1428,6 +1428,26 @@ def start_round_break(room_code, completed_round, break_seconds):
     except Exception as e:
         print("Error starting round break:", e)
 
+def schedule_room_cleanup(room_code):
+    def cleanup():
+        socketio.sleep(15.5)
+        try:
+            with room_lock:
+                if room_code in rooms:
+                    room = rooms[room_code]
+                    print(f"[CLEANUP] Automatically cleaning up room {room_code} and force-redirecting players.")
+                    if room.get('timer_thread'):
+                        try:
+                            room['timer_thread'].cancel()
+                        except Exception:
+                            pass
+                    socketio.emit('force_redirect', {'url': '/'}, to=room_code)
+                    rooms.pop(room_code, None)
+        except Exception as e:
+            print(f"Error in room cleanup for {room_code}: {e}")
+            
+    socketio.start_background_task(cleanup)
+
 def end_tournament(room_code, final_rankings):
     try:
         with room_lock:
@@ -1494,6 +1514,7 @@ def end_tournament(room_code, final_rankings):
             } for sid, p in sorted_players],
             'badges_earned': badges_unlocked_all,
         }, to=room_code)
+        schedule_room_cleanup(room_code)
     except Exception as e:
         print("Error ending tournament:", e)
 
@@ -1546,6 +1567,7 @@ def end_game(room_code):
             } for sid, p in sorted_players],
             'badges_earned': badges_unlocked_all
         }, to=room_code)
+        schedule_room_cleanup(room_code)
     except Exception as e:
         print("Error ending game:", e)
 
@@ -2379,6 +2401,7 @@ def end_round4_grand_final(room_code):
                 'score': mvp_player['score']
             }
         }, to=room_code)
+        schedule_room_cleanup(room_code)
 
     except Exception as e:
         print("Error in end_round4_grand_final:", e)

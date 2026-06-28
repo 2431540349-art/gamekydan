@@ -394,6 +394,13 @@
 <div id="screen-results" class="screen results-container">
     <h1 class="results-title" id="results-title">Kết Quả Cuộc Thi</h1>
 
+    <div id="results-countdown-banner" class="mb-6 hidden">
+        <div class="flex items-center justify-center gap-2 text-amber-400 font-semibold text-lg bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl max-w-md mx-auto">
+            <span>⏱️</span>
+            <span>Tự động quay lại trang chủ sau <strong id="results-countdown-timer" class="text-white text-xl">15</strong>s</span>
+        </div>
+    </div>
+
     <div id="tournament-winner-banner" class="tournament-winner-banner hidden">
         <div class="winner-crown">👑</div>
 <h2 id="winner-team-name">Đội 1</h2>
@@ -407,6 +414,16 @@
     
     <div class="podium" id="results-podium">
         <!-- Podium populated by JS -->
+    </div>
+
+    <!-- Team Standings (Highest to Lowest) -->
+    <div id="team-rankings-card" class="card mb-4 hidden" style="padding: 2rem;">
+        <h3 class="text-xl font-bold mb-4 text-center flex items-center justify-center gap-2 text-primary">
+            <span>📊</span> Bảng Xếp Hạng Đội
+        </h3>
+        <div id="team-rankings-list" class="space-y-3">
+            <!-- Populated by JS -->
+        </div>
     </div>
     
     <div class="card" style="padding: 2rem;">

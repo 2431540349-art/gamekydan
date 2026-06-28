@@ -1165,6 +1165,10 @@ const resCorrect = document.getElementById('res-correct');
             setTimeout(() => Confetti.burst(), 1000);
         });
 
+        socket.on('force_redirect', (data) => {
+            window.location.href = data.url || '/';
+        });
+
         socket.on('show_scene', (data) => {
             showSceneIntro(data);
         });
@@ -1688,6 +1692,9 @@ const resCorrect = document.getElementById('res-correct');
             if (resScore) resScore.textContent = rankings.find(r => r.team === myTeam)?.score || 0;
             if (resCorrect) resCorrect.textContent = rankings.find(r => r.team === myTeam)?.perfect_missions || 0;
 
+            displayTeamRankings(rankings);
+            startAutoRedirectCountdown(15);
+
             Confetti.burst();
             setTimeout(() => Confetti.burst(), 600);
             setTimeout(() => Confetti.burst(), 1200);
@@ -2207,7 +2214,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
 
         if (tournamentWinnerBanner && winner) {
             tournamentWinnerBanner.classList.remove('hidden');
-winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
+            winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
             if (mvp) {
                 mvpPlayerName.textContent = mvp.name || '—';
                 mvpPlayerScore.textContent = `(${mvp.score} điểm)`;
@@ -2235,6 +2242,9 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         resScore.textContent = myStats.score || 0;
         resCorrect.textContent = myStats.correct_answers !== undefined ? myStats.correct_answers : '--';
         resStreak.textContent = myStats.max_streak || 0;
+
+        displayTeamRankings(rankings);
+        startAutoRedirectCountdown(15);
     }
 
     function displayResults(leaderboard, myStats) {
@@ -2261,6 +2271,9 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
         resScore.textContent = myStats.score || 0;
         resCorrect.textContent = myStats.correct_answers !== undefined ? myStats.correct_answers : '--';
         resStreak.textContent = myStats.max_streak || 0;
+
+        displayTeamRankings(leaderboard);
+        startAutoRedirectCountdown(15);
     }
 
     function createPodiumItem(player, rank, medal) {
@@ -2473,6 +2486,89 @@ winnerTeamName.textContent = winner.name || `Đội ${winner.team}`;
                 </div>
             `;
             progressContainer.appendChild(card);
+        });
+    }
+
+    let redirectInterval = null;
+
+    function startAutoRedirectCountdown(seconds = 15) {
+        const timerBanner = document.getElementById('results-countdown-banner');
+        const timerText = document.getElementById('results-countdown-timer');
+        if (!timerBanner || !timerText) return;
+
+        timerBanner.classList.remove('hidden');
+        let remaining = seconds;
+        timerText.textContent = remaining;
+
+        if (redirectInterval) clearInterval(redirectInterval);
+        
+        redirectInterval = setInterval(() => {
+            remaining--;
+            if (timerText) timerText.textContent = remaining;
+            if (remaining <= 0) {
+                clearInterval(redirectInterval);
+                window.location.href = '/';
+            }
+        }, 1000);
+    }
+
+    function displayTeamRankings(items) {
+        const listContainer = document.getElementById('team-rankings-list');
+        const cardContainer = document.getElementById('team-rankings-card');
+        if (!listContainer || !cardContainer) return;
+
+        if (!items || items.length === 0) {
+            cardContainer.classList.add('hidden');
+            return;
+        }
+
+        cardContainer.classList.remove('hidden');
+        listContainer.innerHTML = '';
+
+        // Sort items by score descending (highest score at the top, lowest score at the bottom)
+        const sortedItems = [...items].sort((a, b) => {
+            return (b.score || 0) - (a.score || 0) || (a.total_time || 0) - (b.total_time || 0);
+        });
+
+        sortedItems.forEach((item, idx) => {
+            const rank = idx + 1;
+            
+            // Format name and members
+            let displayName = '';
+            let membersList = '';
+            let isTeam = item.team !== undefined;
+
+            if (isTeam) {
+                displayName = item.name || `Đội ${item.team}`;
+                membersList = (item.members || []).map(m => m.name || m.username || 'Ẩn danh').join(', ');
+            } else {
+                displayName = item.name || item.username || 'Ẩn danh';
+                membersList = 'Cá nhân';
+            }
+
+            // Medals or rank formatting
+            let rankBadge = '';
+            if (rank === 1) rankBadge = '🥇';
+            else if (rank === 2) rankBadge = '🥈';
+            else if (rank === 3) rankBadge = '🥉';
+            else rankBadge = `#${rank}`;
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-4 bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/30 rounded-2xl transition-all duration-300 shadow-lg backdrop-blur-sm';
+            row.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 text-white flex items-center justify-center font-extrabold text-base shadow-md border border-slate-600/50">${rankBadge}</span>
+                    <div>
+                        <span class="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300 text-lg">${displayName}</span>
+                        <span class="text-xs text-slate-400 block mt-0.5">${membersList}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-yellow-500 text-2xl">${item.score || 0}đ</span>
+                    ${item.total_time ? `<span class="text-[10px] text-slate-500 block">Thời gian: ${item.total_time.toFixed(1)}s</span>` : ''}
+                </div>
+            `;
+            listContainer.appendChild(row);
         });
     }
 

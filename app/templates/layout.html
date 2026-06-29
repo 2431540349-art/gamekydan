@@ -313,6 +313,12 @@
             setViewportHeight();
             window.addEventListener('resize', setViewportHeight);
 
+            if (flashMessages) {
+                setTimeout(() => {
+                    flashMessages.style.display = 'none';
+                }, 5000);
+            }
+
             // Handle mobile menu toggle
             if (menuButton && siteNav) {
                 menuButton.addEventListener('click', () => {

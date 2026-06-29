@@ -2294,7 +2294,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
         return div;
     }
 
-    function showToast(message, type = 'info', duration = 3500) {
+    function showToast(message, type = 'info', duration = 5000) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;

@@ -203,9 +203,11 @@
             <div class="r3-center-panel">
                 <div class="card r3-image-card">
                     <div class="r3-image-wrapper" id="r3-image-wrapper">
-                        <img id="r3-case-image" src="" alt="Case Image" />
-                        <div id="r3-interaction-layer" class="r3-interaction-layer">
-                            <!-- Dynamic canvas, drag-drop targets, text inputs, etc. will be rendered here -->
+                        <div class="image-interactive-container" style="position: relative; display: inline-block;">
+                            <img id="r3-case-image" src="" alt="Case Image" />
+                            <div id="r3-interaction-layer" class="r3-interaction-layer">
+                                <!-- Dynamic canvas, drag-drop targets, text inputs, etc. will be rendered here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -269,8 +271,10 @@
                         </div>
                     </div>
                     <div class="r4-image-wrapper" id="r4-image-wrapper">
-                        <img id="r4-case-image" src="" alt="Incident Mission Image" />
-                        <div id="r4-interaction-layer" class="r4-interaction-layer">
+                        <div class="image-interactive-container" style="position: relative; display: inline-block;">
+                            <img id="r4-case-image" src="" alt="Incident Mission Image" />
+                            <div id="r4-interaction-layer" class="r4-interaction-layer">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -385,8 +389,6 @@
             <h3>Đội bị loại</h3>
             <div class="break-eliminated" id="break-eliminated"></div>
         </div>
-
-        <button id="btn-skip-break" class="btn btn-outline btn-block mt-2 hidden">Bỏ qua thời gian nghỉ (Host)</button>
     </div>
 </div>
 

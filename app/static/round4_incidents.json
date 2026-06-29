@@ -49,7 +49,7 @@
         "type": "click",
         "question": "Thành viên 4: Chỉ ra đỉnh lưu lượng exfiltration dữ liệu ra ngoài.",
         "image": "r4_soc_warroom.svg",
-        "answer": { "x": 340, "y": 200, "radius": 55 },
+        "answer": { "x": 340, "y": 180, "radius": 55 },
         "hint": "Biểu đồ đường lớn phía dưới bên trái.",
         "explanation": "Outbound traffic spike 4.2 GB trong 3 phút tới IP nước ngoài — dữ liệu cá nhân có thể đang bị rò rỉ.",
         "score": 100,

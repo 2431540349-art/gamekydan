@@ -218,7 +218,6 @@ let active = false;
 const resCorrect = document.getElementById('res-correct');
     const resStreak = document.getElementById('res-streak');
     const btnPlayAgain = document.getElementById('btn-play-again');
-    const btnSkipBreak = document.getElementById('btn-skip-break');
     const breakCountdown = document.getElementById('break-countdown');
     const breakRankings = document.getElementById('break-rankings');
     const breakAdvancing = document.getElementById('break-advancing');
@@ -1152,9 +1151,6 @@ const resCorrect = document.getElementById('res-correct');
             renderBreakRankings(data.team_rankings || []);
             renderBreakTeams(data.active_teams || [], breakAdvancing, 'advancing');
             renderBreakTeams(data.eliminated_teams || [], breakEliminated, 'eliminated');
-            if (window.GAME_CONFIG.isHost && btnSkipBreak) {
-                btnSkipBreak.classList.remove('hidden');
-            }
         });
 
         socket.on('break_tick', (data) => {
@@ -1886,13 +1882,6 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             SoundEffects.playClick();
             window.location.href = '/';
         });
-
-        if (btnSkipBreak) {
-            btnSkipBreak.addEventListener('click', () => {
-                SoundEffects.playClick();
-                socket.emit('skip_break');
-            });
-        }
 
         const btnHostReset = document.getElementById('btn-host-reset');
         if (btnHostReset) {

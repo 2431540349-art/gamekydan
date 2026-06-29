@@ -11,55 +11,36 @@
         <form action="{{ url_for('main.student_login') }}" method="POST" class="guest-room-form">
             <div class="input-group">
                 <label for="room_code">Mã phòng</label>
-                <input
-                    type="text"
-                    id="room_code"
-                    name="room_code"
-                    class="input-field"
-                    value="{{ room_code }}"
-                    readonly
-                >
+                <input type="text" id="room_code" name="room_code" class="input-field" value="{{ room_code }}" readonly>
             </div>
             <div class="input-group">
                 <label for="student_name">Tên sinh viên</label>
                 <select id="student_name" name="student_mssv" class="input-field" required>
                     <option value="">-- Chọn tên của bạn --</option>
                     {% for student in students %}
-                        <option value="{{ student.mssv }}" data-group="{{ student.group }}">{{ student.name }}</option>
+                    <option value="{{ student.mssv }}" data-group="{{ student.group }}">{{ student.name }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="input-group">
                 <label for="selected_group">Nhóm của bạn</label>
-                <input
-                    type="text"
-                    id="selected_group"
-                    class="input-field"
-                    placeholder="Nhóm sẽ được hiển thị khi chọn tên"
-                    readonly
-                >
+                <input type="text" id="selected_group" class="input-field"
+                    placeholder="Nhóm sẽ được hiển thị khi chọn tên" readonly>
             </div>
 
             <div class="input-group">
-                <label for="student_password">Mật khẩu (MSSV của bạn)</label>
-                <input
-                    type="password"
-                    id="student_password"
-                    name="student_password"
-                    class="input-field"
-                    placeholder="Nhập MSSV để xác thực"
-                    minlength="10"
-                    maxlength="10"
-                    required
-                >
+                <label for="student_password">Mật khẩu vào phòng</label>
+                <input type="password" id="student_password" name="student_password" class="input-field"
+                    placeholder="Nhập mật khẩu" required>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block btn-lg">Come here with me</button>
         </form>
 
         <div class="student-guide mt-4">
-            <p><strong>Lưu ý:</strong> Sau khi chọn tên, hệ thống sẽ hiển thị nhóm của bạn. Để vào chơi, hãy nhập đúng MSSV của chính bạn làm mật khẩu.</p>
+            <p><strong>Lưu ý:</strong> Sau khi chọn tên, hệ thống sẽ hiển thị nhóm của bạn. Để vào chơi, hãy nhập mật
+                khẩu vào phòng</p>
         </div>
     </div>
 </section>

@@ -178,6 +178,9 @@ let active = false;
     const screenResults = document.getElementById('screen-results');
     const sceneCountdown = document.getElementById('scene-countdown');
     const roundIntroCountdown = document.getElementById('round-intro-countdown');
+    const roundIntroKicker = document.getElementById('round-intro-kicker');
+    const roundIntroTitle = document.getElementById('round-intro-title');
+    const roundIntroDescription = document.getElementById('round-intro-description');
     
     const lobbyPlayers = document.getElementById('lobby-players');
     const playerCount = document.getElementById('player-count');
@@ -1175,7 +1178,7 @@ const resCorrect = document.getElementById('res-correct');
 
         socket.on('game_started', (data) => {
             stopSceneCountdown();
-            const shouldShowRoundIntro = Boolean(data.tournament_mode) && Number(data.round) === 1;
+            const shouldShowRoundIntro = Boolean(data.tournament_mode) && data.round;
             if (shouldShowRoundIntro) {
                 showRoundIntro(data);
             } else {
@@ -2342,7 +2345,17 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
     }
 
     function showRoundIntro(data = {}) {
-        let remaining = Number(data.round_intro_seconds || 5);
+        let remaining = Number(data.round_intro_seconds || 30);
+
+        if (roundIntroKicker && data.round) {
+            roundIntroKicker.textContent = `Vòng ${data.round}`;
+        }
+        if (roundIntroTitle && data.round_name) {
+            roundIntroTitle.textContent = data.round_name;
+        }
+        if (roundIntroDescription && data.round_description) {
+            roundIntroDescription.innerHTML = data.round_description;
+        }
 
         stopRoundIntroCountdown();
         if (roundIntroCountdown) {

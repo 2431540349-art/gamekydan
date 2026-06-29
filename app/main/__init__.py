@@ -12,7 +12,7 @@ from app.websocket import rooms
 from models.category import Category
 from models.user import User
 
-FIXED_ROOM_CODE = "2026"
+FIXED_ROOM_CODE = "2027"
 STUDENTS = [
     {"mssv": "2431540347", "name": "Huỳnh Trọng Hiệp", "gender": "Nam", "group": "1"},
     {"mssv": "2431540308", "name": "Hoàng Yến Nhi", "gender": "Nữ", "group": "1"},
@@ -136,8 +136,8 @@ def student_login():
         flash(f"Chỉ được phép vào phòng {FIXED_ROOM_CODE}.", "error")
         return redirect(url_for("main.home"))
 
-    if not student or student_password != student_mssv:
-        flash("MSSV hoặc mật khẩu không đúng. Vui lòng thử lại.", "error")
+    if not student or student_password != "2027":
+        flash("Mật khẩu vào phòng không đúng. Vui lòng thử lại.", "error")
         return redirect(url_for("main.lobby", room_code=room_code))
 
     session["guest_player_name"] = student["name"]

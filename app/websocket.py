@@ -34,7 +34,7 @@ TEAM_COUNT = 10
 TEAM_SIZE = 6
 MAX_PLAYERS_PER_ROOM = TEAM_COUNT * TEAM_SIZE
 INTRO_SCENE_SECONDS = 12
-ROUND_INTRO_SECONDS = 5
+ROUND_INTRO_SECONDS = 30
 
 DIFFICULTY_CONFIG = {
     'easy': {
@@ -67,7 +67,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'question_count': ROUND1_QUESTIONS_PER_PLAYER,
         'time_per_question': ROUND1_ANSWER_SECONDS,
         'read_seconds': ROUND1_READ_SECONDS,
-        'break_seconds': 480,
+        'break_seconds': 30,
         'description': '10 đội tham gia, chọn 7 đội may mắn đi tiếp và 3 đội bị loại',
     },
     2: {
@@ -77,7 +77,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'question_count': ROUND2_QUESTIONS_PER_TEAM,
         'time_per_question': ROUND2_ANSWER_SECONDS,
         'read_seconds': ROUND2_READ_SECONDS,
-        'break_seconds': 420,
+        'break_seconds': 30,
         'description': '7 đội theo 7 chủ đề, chọn 5 đội đi tiếp',
     },
     3: {
@@ -86,7 +86,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'teams_advance': 2,
         'question_count': 6,
         'time_per_question': 20,
-        'break_seconds': 420,
+        'break_seconds': 30,
         'description': '3 đội phân tích hình ảnh, chỉ ra dấu hiệu tấn công mạng',
     },
     4: {
@@ -710,10 +710,11 @@ def start_tournament_round(room_code, round_num):
             'tournament_mode': True,
             'round': round_num,
             'round_name': cfg['name'],
-            'round_intro_seconds': ROUND_INTRO_SECONDS if round_num == 1 else 0,
+            'round_description': cfg.get('description', ''),
+            'round_intro_seconds': ROUND_INTRO_SECONDS,
         }, to=room_code)
 
-        socketio.sleep(ROUND_INTRO_SECONDS if round_num == 1 else 2.0)
+        socketio.sleep(ROUND_INTRO_SECONDS)
         send_next_question(room_code)
     except Exception as e:
         socketio.emit('error', {'message': f"Lỗi bắt đầu vòng đấu: {str(e)}"}, to=room_code)

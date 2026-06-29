@@ -157,6 +157,16 @@ def get_team_rankings(room, team_ids=None):
             'score': p['score'],
             'best_streak': p.get('best_streak', 0),
         })
+    # Ensure all requested team_ids are present (even empty ones)
+    for team_id in team_ids:
+        if team_id not in teams:
+            teams[team_id] = {
+                'team': team_id,
+                'name': f'Đội {team_id}',
+                'score': 0,
+                'total_time': 0.0,
+                'members': [],
+            }
     for team in teams.values():
         team['members'].sort(key=lambda m: m['score'], reverse=True)
     return sorted(
@@ -591,6 +601,21 @@ def load_round_questions(room, round_num):
         return
     if round_num == 2:
         room['round2_assignments'] = allocate_round2_questions(room.get('active_teams') or set())
+        room['round2_player_questions'] = {}
+        for sid, p in room['players'].items():
+            team_id = p.get('team')
+            if team_id and team_id in room['round2_assignments']:
+                pack = room['round2_assignments'][team_id]
+                qs = list(pack['questions'])
+                # Shift the questions list by player's index in the team to ensure uniqueness
+                team_members = [s for s, pl in room['players'].items() if pl.get('team') == team_id]
+                team_members.sort()
+                try:
+                    member_idx = team_members.index(sid)
+                except ValueError:
+                    member_idx = 0
+                shifted_qs = qs[member_idx % len(qs):] + qs[:member_idx % len(qs)]
+                room['round2_player_questions'][sid] = shifted_qs
         room['round2_question_index'] = 0
         room['questions'] = []
         room['current_index'] = 0
@@ -898,7 +923,11 @@ def send_next_round2_question(room_code):
             pack = (room.get('round2_assignments') or {}).get(team_id)
             if not pack:
                 continue
-            q = pack['questions'][idx]
+            # Get player-specific questions
+            p_qs = room.get('round2_player_questions', {}).get(sid)
+            if not p_qs:
+                p_qs = pack['questions']
+            q = p_qs[idx]
             room['active_questions'][sid] = q
             player['used_lifeline_on_this'] = False
             socketio.emit('new_question', {
@@ -2310,41 +2339,32 @@ def end_round4_grand_final(room_code):
                 return
             room = rooms[room_code]
 
-        active_teams = list(room['round4_team_states'].keys())
+        # Get all 10 teams' rankings (calculated by sum of member scores across all 4 rounds)
+        all_rankings = get_team_rankings(room, list(range(1, 11)))
         
-        rankings = []
-        for team_id in active_teams:
-            ts = room['round4_team_states'][team_id]
-            total_score = get_team_total_score(room, team_id)
-            total_time = sum(ts['times'])
-            
-            members = [
-                {
-                    'sid': sid,
-                    'name': p['name'],
-                    'avatar': p['avatar'],
-                    'score': p['score']
-                }
-                for sid, p in room['players'].items() if p.get('team') == team_id
-            ]
-            
-            rankings.append({
-                'team': team_id,
-                'name': f'Đội {team_id}',
-                'score': total_score,
-                'total_time': total_time,
-                'accuracy': sum(1 for pm in ts['perfect_missions'] if pm) / 5.0 * 100,
-                'avg_time': total_time / 5.0,
-                'perfect_missions': sum(1 for pm in ts['perfect_missions'] if pm),
-                'members': members
-            })
+        # Merge Round 4 specific stats for the 2 active teams
+        for r_team in all_rankings:
+            team_id = r_team['team']
+            if team_id in room.get('round4_team_states', {}):
+                ts = room['round4_team_states'][team_id]
+                total_time = sum(ts['times'])
+                r_team['total_time'] = total_time
+                r_team['accuracy'] = sum(1 for pm in ts['perfect_missions'] if pm) / 5.0 * 100
+                r_team['avg_time'] = total_time / 5.0
+                r_team['perfect_missions'] = sum(1 for pm in ts['perfect_missions'] if pm)
+            else:
+                r_team['total_time'] = 0.0
+                r_team['accuracy'] = 0.0
+                r_team['avg_time'] = 0.0
+                r_team['perfect_missions'] = 0
 
-        rankings.sort(key=lambda x: (-x['score'], x['total_time']))
+        # Sort all 10 teams by score descending, then total_time ascending
+        all_rankings.sort(key=lambda x: (-x['score'], x['total_time']))
         
-        champion_team = rankings[0]['team']
-        runner_up_team = rankings[1]['team'] if len(rankings) > 1 else None
+        champion_team = all_rankings[0]['team']
+        runner_up_team = all_rankings[1]['team'] if len(all_rankings) > 1 else None
 
-        champion_members = rankings[0]['members']
+        champion_members = all_rankings[0]['members']
         champion_members.sort(key=lambda x: x['score'], reverse=True)
         mvp_player = champion_members[0] if champion_members else {'name': 'Ẩn danh', 'avatar': '👤', 'score': 0}
 
@@ -2352,9 +2372,9 @@ def end_round4_grand_final(room_code):
         round_result = {
             'round': 4,
             'round_name': cfg['name'],
-            'rankings': rankings,
+            'rankings': all_rankings,
             'advancing_teams': [champion_team],
-            'eliminated_teams': [runner_up_team] if runner_up_team else [],
+            'eliminated_teams': [t['team'] for t in all_rankings[1:]],
         }
         room['round_history'].append(round_result)
 
@@ -2365,14 +2385,14 @@ def end_round4_grand_final(room_code):
             print(f"🥈 RUNNER UP TEAM: {runner_up_team}")
         print(f"⭐ MVP: {mvp_player['avatar']} {mvp_player['name']} - {mvp_player['score']} pts")
         print("📊 TEAM STATISTICS:")
-        for team_stat in rankings:
+        for team_stat in all_rankings:
             print(f"  - Team {team_stat['team']}: Score={team_stat['score']}, Accuracy={team_stat['accuracy']:.1f}%, Avg Time={team_stat['avg_time']:.1f}s, Perfect Missions={team_stat['perfect_missions']}/5")
         print("="*40 + "\n")
 
         socketio.emit('round4_game_over', {
             'champion_team': champion_team,
             'runner_up_team': runner_up_team,
-            'rankings': rankings,
+            'rankings': all_rankings,
             'mvp': {
                 'name': mvp_player['name'],
                 'avatar': mvp_player['avatar'],

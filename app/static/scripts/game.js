@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.events[idx + 1] = this.events[idx];
                     this.events[idx] = temp;
                     this.renderListItems();
-                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), false);
                 });
 
                 controls.appendChild(btnUp);
@@ -779,6 +779,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.appendChild(controls);
                 this.listEl.appendChild(item);
             });
+
+            if (!this.submitted) {
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'btn btn-primary btn-sm mt-3';
+                confirmBtn.style.cssText = 'width: 100%; padding: 8px; font-weight: bold; border-radius: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: none; color: white; cursor: pointer;';
+                confirmBtn.textContent = 'Xác nhận thứ tự';
+                confirmBtn.addEventListener('click', () => {
+                    if (this.submitted) return;
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), true);
+                });
+                this.listEl.appendChild(confirmBtn);
+            }
         }
 
         getAnswerPayload() {
@@ -813,12 +825,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const field = document.createElement('input');
             field.type = 'text';
             field.className = 'r3-text-field';
-            field.placeholder = 'Nhập mật mã/đáp án trinh thám...';
+            field.placeholder = 'Nhập mật mã/đáp án và nhấn Enter...';
             field.id = 'r3-input-field';
 
             field.addEventListener('input', (e) => {
                 this.textVal = e.target.value;
-                if (this.onAnswerChange) this.onAnswerChange(this.textVal);
+                if (this.onAnswerChange) this.onAnswerChange(this.textVal, false);
+            });
+
+            field.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.submitted) return;
+                    if (this.onAnswerChange) this.onAnswerChange(this.textVal, true);
+                }
             });
 
             inputContainer.appendChild(field);
@@ -866,7 +886,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 SoundEffects.playClick();
                 this.addMarker(x, y);
-                if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                const total = this.caseData.hotspots ? this.caseData.hotspots.length : 3;
+                if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), this.clickedPts.length >= total);
             });
             this.container.appendChild(overlay);
         }
@@ -885,7 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     marker.remove();
                     this.clickedPts = this.clickedPts.filter(pt => pt.x !== x || pt.y !== y);
                     this.updateCounter();
-                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), false);
                 });
             }
 
@@ -974,9 +995,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         [this.events[i], this.events[i + 1]] = [this.events[i + 1], this.events[i]];
                     }
                     this.renderItems();
-                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload());
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), false);
                 });
             });
+
+            // Add an inline confirm button for sequence ordering
+            if (!this.submitted) {
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'btn btn-primary btn-sm mt-3';
+                confirmBtn.style.cssText = 'width: 100%; padding: 8px; font-weight: bold; border-radius: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: none; color: white; cursor: pointer;';
+                confirmBtn.textContent = 'Xác nhận thứ tự';
+                confirmBtn.addEventListener('click', () => {
+                    if (this.submitted) return;
+                    if (this.onAnswerChange) this.onAnswerChange(this.getAnswerPayload(), true);
+                });
+                this.listEl.appendChild(confirmBtn);
+            }
         }
 
         getAnswerPayload() {
@@ -1041,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const y = Math.round((e.clientY - rect.top) / rect.height * 600);
                 this.clickCoord = { x, y };
                 this.drawMarker(view, x, y);
-                if (this.onAnswerChange) this.onAnswerChange(this.clickCoord);
+                if (this.onAnswerChange) this.onAnswerChange(this.clickCoord, true);
                 SoundEffects.playClick();
             });
 
@@ -1230,32 +1264,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 r3CaseImage.src = `/static/images/${data.image}`;
                 r3Timer.textContent = data.time_per_question || 30;
 
-                btnR3Submit.classList.remove('hidden');
-                btnR3Submit.disabled = false;
+                if (btnR3Submit) {
+                    btnR3Submit.classList.remove('hidden');
+                    btnR3Submit.disabled = false;
+                }
                 btnR3Next.classList.add('hidden');
 
                 if (r3InteractionLayer) {
                     const type = data.type;
+                    
+                    const onAnswerChangeR3 = (payload, isFinal = false) => {
+                        if (!payload || hasAnswered) return;
+                        
+                        const isTextInput = (r3CurrentHandler && r3CurrentHandler.constructor.name === 'TextInputHandler');
+                        const isTimeline = (r3CurrentHandler && (r3CurrentHandler.constructor.name === 'TimelineOrderingHandler' || r3CurrentHandler.constructor.name === 'SequenceBuilderHandler'));
+                        
+                        if (isTextInput && !isFinal) return;
+                        if (isTimeline && !isFinal) return;
+                        
+                        if (r3CurrentHandler && r3CurrentHandler.constructor.name === 'MultipleHotspotsHandler') {
+                            const total = r3CurrentHandler.caseData.hotspots ? r3CurrentHandler.caseData.hotspots.length : 3;
+                            if (payload.length < total) return;
+                        }
+                        
+                        if (r3CurrentHandler && r3CurrentHandler.constructor.name === 'DragDropHandler') {
+                            const totalItems = r3CurrentHandler.caseData.items ? r3CurrentHandler.caseData.items.length : 0;
+                            const mappedCount = Object.keys(payload).length;
+                            if (mappedCount < totalItems) return;
+                        }
+                        
+                        if (r3CurrentHandler && r3CurrentHandler.constructor.name === 'ConnectObjectsHandler') {
+                            const totalLeft = r3CurrentHandler.caseData.left_items ? r3CurrentHandler.caseData.left_items.length : 0;
+                            const connectedCount = Object.keys(payload).length;
+                            if (connectedCount < totalLeft) return;
+                        }
+ 
+                        hasAnswered = true;
+                        if (r3CurrentHandler) r3CurrentHandler.disable();
+                        const timerVal = parseInt(r3Timer ? r3Timer.textContent : '0') || 0;
+                        socket.emit('submit_answer', {
+                            round3_answer: payload,
+                            time_taken: (currentTimeLimit || 30) - timerVal
+                        });
+                    };
+
                     if (type === 'click') {
-                        r3CurrentHandler = new ClickAreaHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new ClickAreaHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'image_hotspot') {
-                        r3CurrentHandler = new ImageHotspotHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new ImageHotspotHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'highlight') {
-                        r3CurrentHandler = new HighlightRegionHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new HighlightRegionHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'drag_drop') {
-                        r3CurrentHandler = new DragDropHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new DragDropHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'connect') {
-                        r3CurrentHandler = new ConnectObjectsHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new ConnectObjectsHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'timeline') {
-                        r3CurrentHandler = new TimelineOrderingHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new TimelineOrderingHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'text_input') {
-                        r3CurrentHandler = new TextInputHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new TextInputHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'multiple_hotspots') {
-                        r3CurrentHandler = new MultipleHotspotsHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new MultipleHotspotsHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'sequence_builder') {
-                        r3CurrentHandler = new SequenceBuilderHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new SequenceBuilderHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else if (type === 'image_comparison') {
-                        r3CurrentHandler = new ImageComparisonHandler(r3InteractionLayer, data, () => { });
+                        r3CurrentHandler = new ImageComparisonHandler(r3InteractionLayer, data, onAnswerChangeR3);
                     } else {
                         r3CurrentHandler = null;
                         r3InteractionLayer.innerHTML = '';
@@ -1331,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     r3CurrentHandler.showCorrectAnswer(data.correct_details);
                 }
 
-                btnR3Submit.classList.add('hidden');
+                if (btnR3Submit) btnR3Submit.classList.add('hidden');
                 if (window.GAME_CONFIG.isHost) {
                     btnR3Next.classList.remove('hidden');
                 }
@@ -1554,28 +1626,64 @@ document.addEventListener('DOMContentLoaded', () => {
                 r4InteractionLayer.innerHTML = '';
                 const type = data.type;
                 const handlerContainer = r4InteractionLayer;
-                const onAnswerChange = () => { };
+                
+                const onAnswerChangeR4 = (payload, isFinal = false) => {
+                    if (!payload || hasAnswered) return;
+                    const iAmActive = (socket.id === r4ActivePlayerSid);
+                    if (!iAmActive) return;
+
+                    const isTextInput = (r4CurrentHandler && r4CurrentHandler.constructor.name === 'TextInputHandler');
+                    const isTimeline = (r4CurrentHandler && (r4CurrentHandler.constructor.name === 'TimelineOrderingHandler' || r4CurrentHandler.constructor.name === 'SequenceBuilderHandler'));
+                    
+                    if (isTextInput && !isFinal) return;
+                    if (isTimeline && !isFinal) return;
+                    
+                    if (r4CurrentHandler && r4CurrentHandler.constructor.name === 'MultipleHotspotsHandler') {
+                        const total = r4CurrentHandler.caseData.hotspots ? r4CurrentHandler.caseData.hotspots.length : 3;
+                        if (payload.length < total) return;
+                    }
+                    
+                    if (r4CurrentHandler && r4CurrentHandler.constructor.name === 'DragDropHandler') {
+                        const totalItems = r4CurrentHandler.caseData.items ? r4CurrentHandler.caseData.items.length : 0;
+                        const mappedCount = Object.keys(payload).length;
+                        if (mappedCount < totalItems) return;
+                    }
+                    
+                    if (r4CurrentHandler && r4CurrentHandler.constructor.name === 'ConnectObjectsHandler') {
+                        const totalLeft = r4CurrentHandler.caseData.left_items ? r4CurrentHandler.caseData.left_items.length : 0;
+                        const connectedCount = Object.keys(payload).length;
+                        if (connectedCount < totalLeft) return;
+                    }
+
+                    hasAnswered = true;
+                    if (r4CurrentHandler) r4CurrentHandler.disable();
+                    const timerVal = parseInt(r4Timer ? r4Timer.textContent : '0') || 0;
+                    socket.emit('submit_answer', {
+                        round3_answer: payload,
+                        time_taken: 20 - timerVal
+                    });
+                };
 
                 if (type === 'click') {
-                    r4CurrentHandler = new ClickAreaHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new ClickAreaHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'image_hotspot') {
-                    r4CurrentHandler = new ImageHotspotHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new ImageHotspotHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'highlight') {
-                    r4CurrentHandler = new HighlightRegionHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new HighlightRegionHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'drag_drop') {
-                    r4CurrentHandler = new DragDropHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new DragDropHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'connect') {
-                    r4CurrentHandler = new ConnectObjectsHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new ConnectObjectsHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'timeline') {
-                    r4CurrentHandler = new TimelineOrderingHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new TimelineOrderingHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'text_input') {
-                    r4CurrentHandler = new TextInputHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new TextInputHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'multiple_hotspots') {
-                    r4CurrentHandler = new MultipleHotspotsHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new MultipleHotspotsHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'sequence_builder') {
-                    r4CurrentHandler = new SequenceBuilderHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new SequenceBuilderHandler(handlerContainer, data, onAnswerChangeR4);
                 } else if (type === 'image_comparison') {
-                    r4CurrentHandler = new ImageComparisonHandler(handlerContainer, data, onAnswerChange);
+                    r4CurrentHandler = new ImageComparisonHandler(handlerContainer, data, onAnswerChangeR4);
                 }
 
                 if (r4CurrentHandler) {

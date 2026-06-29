@@ -1316,7 +1316,21 @@ const resCorrect = document.getElementById('res-correct');
             const isRound3 = data.round === 3 || (currentRound === 3);
 
             if (isRound3) {
-                // Round 3 detective result - correct/wrong notifications and explanation popups removed
+                const isCorrect = data.is_correct;
+                const score = data.score || 0;
+                const partial = data.partial_score || 0;
+
+                if (isCorrect) {
+                    SoundEffects.playCorrect();
+                    Confetti.burst();
+                } else {
+                    SoundEffects.playWrong();
+                }
+
+                if (r3CurrentHandler) {
+                    r3CurrentHandler.showCorrectAnswer(data.correct_details);
+                }
+
                 btnR3Submit.classList.add('hidden');
                 if (window.GAME_CONFIG.isHost) {
                     btnR3Next.classList.remove('hidden');
@@ -1356,11 +1370,6 @@ const resCorrect = document.getElementById('res-correct');
             } else {
                 SoundEffects.playWrong();
             }
-
-            // Show explanation
-            expTitle.textContent = isCorrect ? "✅ Chính xác!" : "❌ Sai rồi!";
-            expText.textContent = data.explanation;
-            expPopup.className = `explanation-popup show ${isCorrect ? 'correct' : 'wrong'}`;
         });
 
         socket.on('streak_update', (data) => {
@@ -1594,7 +1603,20 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('round4_mission_result', (data) => {
+            const isCorrect = data.is_correct;
             const score = data.score || 0;
+
+            // Play correct or wrong sound (ting ting) as requested
+            if (isCorrect) {
+                SoundEffects.playCorrect();
+            } else {
+                SoundEffects.playWrong();
+            }
+
+            // Show correct selected area (hotspots)
+            if (r4CurrentHandler && data.correct_details) {
+                r4CurrentHandler.showCorrectAnswer(data.correct_details);
+            }
 
             // Update team score
             const currentScore = parseInt(r4TeamScore?.textContent || '0');
@@ -2153,9 +2175,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
     }
 
     function showRoundBreakSummary(data) {
-        // Brief toast before break screen loads from round_break event
-        const advancing = (data.advancing_teams || []).map(t => `Đội ${t}`).join(', ');
-        showToast(`Kết thúc ${data.round_name}. Đi tiếp: ${advancing}`, 'success');
+        // Brief toast before break screen loads - disabled as requested
     }
 
     function displayTournamentResults(data) {

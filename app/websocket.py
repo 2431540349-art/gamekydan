@@ -1703,13 +1703,8 @@ def on_submit_answer(data):
         if current_round == 3:
             evaluation, score_ratio, correct_details = validate_round3_case(q, answer_text)
             is_correct = (evaluation == "Correct")
-            time_limit = q.get('time', 30)
-            max_score = q.get('score', 100)
-            score = 0
-            if score_ratio > 0:
-                time_bonus = max(0.0, (time_limit - time_taken) / time_limit)
-                score = int(max_score * score_ratio * (0.5 + 0.5 * time_bonus))
-                p['score'] += score
+            score = 1 if is_correct else 0
+            p['score'] += score
 
             if is_correct:
                 p['streak'] += 1
@@ -1732,7 +1727,7 @@ def on_submit_answer(data):
                 'round': 3,
                 'is_correct': is_correct,
                 'score': score,
-                'partial_score': int(q.get('score', 100) * score_ratio) if score_ratio > 0 and not is_correct else 0,
+                'partial_score': 0,
                 'evaluation': evaluation,
                 'explanation': q.get('explanation', 'Không có giải thích vụ án.'),
                 'correct_details': correct_details
@@ -1774,15 +1769,8 @@ def on_submit_answer(data):
             if correct_text and correct_text.strip().lower() == val_clean:
                 is_correct = True
                 
-        multiplier = DIFFICULTY_CONFIG[room['difficulty']]['score_multiplier']
-        time_limit = get_round_time_limit(room)
-        
-        score = 0
+        score = 1 if is_correct else 0
         if is_correct:
-            time_bonus = max(0.0, (time_limit - time_taken) / time_limit)
-            base_score = 100
-            score = int(base_score * multiplier * (0.5 + 0.5 * time_bonus))
-            
             p['score'] += score
             if not p.get('used_lifeline_on_this'):
                 p['streak'] += 1
@@ -2046,20 +2034,8 @@ def start_team_round4_mission(room_code, team_id):
             mission_idx = team_state['current_mission_index']
             if mission_idx >= 5:
                 team_state['completed'] = True
-                all_done = True
-                for ts in room['round4_team_states'].values():
-                    if not ts['completed']:
-                        all_done = False
-                
-                for sid in team_state['active_players_list']:
-                    socketio.emit('round4_team_completed', {
-                        'team_score': get_team_total_score(room, team_id),
-                        'opponent_progress': get_opponent_progress_payload(room, team_id),
-                        'teammate_progress': get_teammate_progress_payload(room, team_id)
-                    }, to=sid)
-                
-                if all_done:
-                    end_round4_grand_final(room_code)
+                # End the round immediately when any team completes their missions
+                end_round4_grand_final(room_code)
                 return
 
             mission = room['questions'][mission_idx]
@@ -2195,14 +2171,7 @@ def handle_round4_answer_submission(room, sid, data):
         evaluation, score_ratio, correct_details = validate_round3_case(mission, answer_text)
         is_correct = (evaluation == "Correct")
 
-        score = 0
-        if is_correct:
-            score = 100
-            if time_taken < 10.0:
-                score += 20
-            score += 20
-            if not team_state['hints_used'][mission_idx]:
-                score += 50
+        score = 1 if is_correct else 0
 
         p['score'] += score
         p['total_time'] += time_taken
@@ -2311,10 +2280,7 @@ def get_teammate_progress_payload(room, team_id):
 def get_team_total_score(room, team_id):
     try:
         team_state = room['round4_team_states'][team_id]
-        total = sum(team_state['scores'])
-        if all(team_state['perfect_missions']):
-            total += 100
-        return total
+        return sum(team_state['scores'])
     except Exception:
         return 0
 

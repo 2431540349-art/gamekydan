@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
                 osc.start();
                 osc.stop(this.ctx.currentTime + 0.08);
-            } catch (e) {}
+            } catch (e) { }
         },
         playCorrect() {
             try {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 playTone(523.25, now, 0.12); // C5
                 playTone(659.25, now + 0.08, 0.12); // E5
                 playTone(783.99, now + 0.16, 0.25); // G5
-            } catch (e) {}
+            } catch (e) { }
         },
         playWrong() {
             try {
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
                 osc.start();
                 osc.stop(this.ctx.currentTime + 0.35);
-            } catch (e) {}
+            } catch (e) { }
         },
         playStreak() {
             try {
@@ -72,14 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const gain = this.ctx.createGain();
                 osc.type = 'triangle';
                 osc.connect(gain);
-gain.connect(this.ctx.destination);
+                gain.connect(this.ctx.destination);
                 osc.frequency.setValueAtTime(440, now);
                 osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.4); // B5
                 gain.gain.setValueAtTime(0.1, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                 osc.start();
                 osc.stop(now + 0.4);
-            } catch (e) {}
+            } catch (e) { }
         },
         playTick() {
             try {
@@ -93,7 +93,7 @@ gain.connect(this.ctx.destination);
                 gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
                 osc.start();
                 osc.stop(this.ctx.currentTime + 0.05);
-            } catch (e) {}
+            } catch (e) { }
         }
     };
 
@@ -145,7 +145,7 @@ gain.connect(this.ctx.destination);
         },
         loop() {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-let active = false;
+            let active = false;
             this.particles.forEach(p => {
                 if (p.alpha > 0) {
                     active = true;
@@ -181,14 +181,14 @@ let active = false;
     const roundIntroKicker = document.getElementById('round-intro-kicker');
     const roundIntroTitle = document.getElementById('round-intro-title');
     const roundIntroDescription = document.getElementById('round-intro-description');
-    
+
     const lobbyPlayers = document.getElementById('lobby-players');
     const playerCount = document.getElementById('player-count');
     const btnReady = document.getElementById('btn-ready');
     const btnStart = document.getElementById('btn-start');
     const teamSelector = document.getElementById('team-selector');
     const selectedTeamStatus = document.getElementById('selected-team-status');
-    
+
     // Game Elements
     const qArticle = document.getElementById('q-article');
     const qText = document.getElementById('q-text');
@@ -203,7 +203,7 @@ let active = false;
     const streakCount = document.getElementById('streak-count');
     const btn5050 = document.getElementById('btn-5050');
     const btnHint = document.getElementById('btn-hint');
-    
+
     // Popups
     const expPopup = document.getElementById('explanation-popup');
     const expTitle = document.getElementById('exp-title');
@@ -211,11 +211,11 @@ let active = false;
     const hintPopup = document.getElementById('hint-popup');
     const hintText = document.getElementById('hint-text');
     const badgeModal = document.getElementById('badge-modal');
-    
+
     // Results
     const podium = document.getElementById('results-podium');
     const resScore = document.getElementById('res-score');
-const resCorrect = document.getElementById('res-correct');
+    const resCorrect = document.getElementById('res-correct');
     const resStreak = document.getElementById('res-streak');
     const btnPlayAgain = document.getElementById('btn-play-again');
     const breakCountdown = document.getElementById('break-countdown');
@@ -369,7 +369,7 @@ const resCorrect = document.getElementById('res-correct');
         }
     }
 
-    class ImageHotspotHandler extends ClickAreaHandler {}
+    class ImageHotspotHandler extends ClickAreaHandler { }
 
     class HighlightRegionHandler extends BaseInteractionHandler {
         constructor(container, caseData, onAnswerChange) {
@@ -384,7 +384,7 @@ const resCorrect = document.getElementById('res-correct');
             super.render();
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position: absolute; top:0; left:0; width:100%; height:100%; cursor: crosshair; user-select: none;';
-            
+
             const handleStart = (clientX, clientY, rect) => {
                 if (this.submitted) return;
                 this.isDrawing = true;
@@ -497,7 +497,7 @@ const resCorrect = document.getElementById('res-correct');
 
             const itemsContainer = document.createElement('div');
             itemsContainer.className = 'r3-drag-items';
-            
+
             (this.caseData.items || []).forEach(item => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'r3-drag-item';
@@ -627,9 +627,9 @@ const resCorrect = document.getElementById('res-correct');
                 node.addEventListener('click', () => {
                     if (this.submitted || !this.selectedLeft) return;
                     SoundEffects.playClick();
-                    
+
                     this.connections[this.selectedLeft] = item.id;
-                    
+
                     const leftNode = document.getElementById(`node-${this.selectedLeft}`);
                     if (leftNode) leftNode.classList.remove('selected');
                     this.selectedLeft = null;
@@ -815,7 +815,7 @@ const resCorrect = document.getElementById('res-correct');
             field.className = 'r3-text-field';
             field.placeholder = 'Nhập mật mã/đáp án trinh thám...';
             field.id = 'r3-input-field';
-            
+
             field.addEventListener('input', (e) => {
                 this.textVal = e.target.value;
                 if (this.onAnswerChange) this.onAnswerChange(this.textVal);
@@ -876,7 +876,7 @@ const resCorrect = document.getElementById('res-correct');
             marker.className = 'r3-marker' + (isCorrect ? ' correct-marker' : '');
             marker.style.left = (x / 800 * 100) + '%';
             marker.style.top = (y / 600 * 100) + '%';
-            
+
             if (!isCorrect && !this.submitted) {
                 marker.style.pointerEvents = 'auto';
                 marker.addEventListener('click', (e) => {
@@ -917,7 +917,7 @@ const resCorrect = document.getElementById('res-correct');
         showCorrectAnswer(correctDetails) {
             this.disable();
             this.container.querySelectorAll('.r3-marker:not(.correct-marker)').forEach(m => m.remove());
-            
+
             if (correctDetails && correctDetails.hotspots) {
                 correctDetails.hotspots.forEach(h => {
                     const marker = document.createElement('div');
@@ -1088,7 +1088,7 @@ const resCorrect = document.getElementById('res-correct');
 
         socket.on('connect', () => {
             console.log('Connected to server');
-            socket.emit('join_room', { 
+            socket.emit('join_room', {
                 room_code: window.GAME_CONFIG.roomCode,
                 avatar: myAvatar,
                 name: window.GAME_CONFIG.playerName || window.CURRENT_USER.username || 'Người chơi',
@@ -1101,7 +1101,7 @@ const resCorrect = document.getElementById('res-correct');
             updatePlayerList(players);
             updateLeaderboard(players);
             updateMyTeamState(players);
-            
+
             // Host có thể bắt đầu khi tất cả người chơi (kể cả host) đã chọn đội và sẵn sàng
             if (window.GAME_CONFIG.isHost) {
                 const allReady = players.length > 0 && players.every(p => p.ready && p.team);
@@ -1211,7 +1211,7 @@ const resCorrect = document.getElementById('res-correct');
             stopRoundIntroCountdown();
             showScreen('game');
             hasAnswered = false;
-            
+
             currentAnswersProgress = currentPlayers.map(p => ({
                 sid: p.sid,
                 name: p.username,
@@ -1220,16 +1220,16 @@ const resCorrect = document.getElementById('res-correct');
             }));
 
             const isRound3 = Number(data.round) === 3;
-            
+
             if (isRound3) {
                 round3GameLayout.classList.remove('hidden');
                 document.querySelector('.game-layout').classList.add('hidden');
-                
+
                 r3CaseTitle.textContent = data.title || "Vụ Án Trinh Thám";
                 r3Instruction.textContent = data.question || "";
                 r3CaseImage.src = `/static/images/${data.image}`;
                 r3Timer.textContent = data.time_per_question || 30;
-                
+
                 btnR3Submit.classList.remove('hidden');
                 btnR3Submit.disabled = false;
                 btnR3Next.classList.add('hidden');
@@ -1237,25 +1237,25 @@ const resCorrect = document.getElementById('res-correct');
                 if (r3InteractionLayer) {
                     const type = data.type;
                     if (type === 'click') {
-                        r3CurrentHandler = new ClickAreaHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new ClickAreaHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'image_hotspot') {
-                        r3CurrentHandler = new ImageHotspotHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new ImageHotspotHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'highlight') {
-                        r3CurrentHandler = new HighlightRegionHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new HighlightRegionHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'drag_drop') {
-                        r3CurrentHandler = new DragDropHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new DragDropHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'connect') {
-                        r3CurrentHandler = new ConnectObjectsHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new ConnectObjectsHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'timeline') {
-                        r3CurrentHandler = new TimelineOrderingHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new TimelineOrderingHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'text_input') {
-                        r3CurrentHandler = new TextInputHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new TextInputHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'multiple_hotspots') {
-                        r3CurrentHandler = new MultipleHotspotsHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new MultipleHotspotsHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'sequence_builder') {
-                        r3CurrentHandler = new SequenceBuilderHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new SequenceBuilderHandler(r3InteractionLayer, data, () => { });
                     } else if (type === 'image_comparison') {
-                        r3CurrentHandler = new ImageComparisonHandler(r3InteractionLayer, data, () => {});
+                        r3CurrentHandler = new ImageComparisonHandler(r3InteractionLayer, data, () => { });
                     } else {
                         r3CurrentHandler = null;
                         r3InteractionLayer.innerHTML = '';
@@ -1342,16 +1342,16 @@ const resCorrect = document.getElementById('res-correct');
             if (!data.correct_answer) return;
             const correctLetter = data.correct_answer.toLowerCase();
             const correctIdx = ['a', 'b', 'c', 'd'].indexOf(correctLetter);
-            
+
             const btns = document.querySelectorAll('.answer-btn');
             let mySelectedIdx = -1;
-            
+
             btns.forEach(btn => {
                 const idx = parseInt(btn.dataset.idx);
                 if (btn.classList.contains('selected')) {
                     mySelectedIdx = idx;
                 }
-                
+
                 if (idx === correctIdx) {
                     btn.classList.add('correct');
                 }
@@ -1363,7 +1363,7 @@ const resCorrect = document.getElementById('res-correct');
             }
 
             const isCorrect = (mySelectedIdx === correctIdx);
-            
+
             if (isCorrect) {
                 SoundEffects.playCorrect();
                 Confetti.burst();
@@ -1419,12 +1419,12 @@ const resCorrect = document.getElementById('res-correct');
         socket.on('leaderboard_update', (data) => {
             if (data.players) {
                 updateLeaderboard(data.players, data.team_rankings);
-                
+
                 const me = data.players.find(p => p.sid === socket.id);
                 if (me) {
                     if (r3Score) r3Score.textContent = me.score || 0;
                 }
-                
+
                 if (data.team_rankings && myTeam) {
                     const myTeamRankIdx = data.team_rankings.findIndex(t => Number(t.team) === Number(myTeam));
                     if (myTeamRankIdx !== -1) {
@@ -1434,7 +1434,7 @@ const resCorrect = document.getElementById('res-correct');
                         if (r3Score && teamData) r3Score.textContent = teamData.score || 0;
                     }
                 } else if (data.players) {
-                    const sortedPlayers = [...data.players].sort((a,b) => b.score - a.score);
+                    const sortedPlayers = [...data.players].sort((a, b) => b.score - a.score);
                     const myRankIdx = sortedPlayers.findIndex(p => p.sid === socket.id);
                     if (myRankIdx !== -1 && r3Rank) {
                         r3Rank.textContent = myRankIdx + 1;
@@ -1472,16 +1472,16 @@ const resCorrect = document.getElementById('res-correct');
             isReady = false;
             hasAnswered = false;
             isEliminated = false;
-            
+
             if (btnReady) {
                 btnReady.textContent = "Sẵn sàng";
                 btnReady.className = "btn btn-primary btn-block btn-lg mt-2";
                 btnReady.disabled = !myTeam;
             }
-            
+
             if (expPopup) expPopup.classList.remove('show');
             if (hintPopup) hintPopup.classList.add('hidden');
-            
+
             showScreen('lobby');
             showToast('Trò chơi đã được quản trị viên reset.', 'warning');
         });
@@ -1554,7 +1554,7 @@ const resCorrect = document.getElementById('res-correct');
                 r4InteractionLayer.innerHTML = '';
                 const type = data.type;
                 const handlerContainer = r4InteractionLayer;
-                const onAnswerChange = () => {};
+                const onAnswerChange = () => { };
 
                 if (type === 'click') {
                     r4CurrentHandler = new ClickAreaHandler(handlerContainer, data, onAnswerChange);
@@ -1698,7 +1698,7 @@ const resCorrect = document.getElementById('res-correct');
                         let cls = 'waiting';
                         if (i < (ts.current_mission - 1)) cls = s > 0 ? 'correct' : 'wrong';
                         else if (i === (ts.current_mission - 1)) cls = 'current';
-                        return `<span class="r4-dot ${cls}">NV${i+1}</span>`;
+                        return `<span class="r4-dot ${cls}">NV${i + 1}</span>`;
                     }).join('');
                     card.innerHTML = `
                         <div class="host-team-progress-header">
@@ -1738,10 +1738,10 @@ const resCorrect = document.getElementById('res-correct');
             el.innerHTML = `<div class="avatar-emoji">${emoji}</div>`;
             el.addEventListener('click', () => {
                 SoundEffects.playClick();
-document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
+                document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
                 el.classList.add('selected');
                 myAvatar = emoji;
-                if(socket && socket.connected) {
+                if (socket && socket.connected) {
                     socket.emit('update_avatar', { avatar: myAvatar });
                 }
             });
@@ -1835,7 +1835,7 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             SoundEffects.playClick();
             hasAnswered = true;
             btn.classList.add('selected');
-            
+
             // Disable all buttons
             document.querySelectorAll('.answer-btn').forEach(b => b.classList.add('disabled'));
 
@@ -1861,7 +1861,7 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
             SoundEffects.playClick();
             socket.emit('use_lifeline', { type: 'hint' });
         });
-        
+
         btnPlayAgain.addEventListener('click', () => {
             SoundEffects.playClick();
             window.location.href = '/';
@@ -1962,7 +1962,7 @@ document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('sel
 
         if (currentLifelines.fifty_fifty) btn5050.disabled = false;
         if (currentLifelines.hint) btnHint.disabled = false;
-answersContainer.innerHTML = '';
+        answersContainer.innerHTML = '';
         if (isEliminated) {
             qText.textContent = `[Khán giả] ${data.question}`;
             answersContainer.innerHTML = '<p class="spectator-notice">Đội của bạn đã bị loại. Theo dõi các đội còn lại.</p>';
@@ -1986,7 +1986,7 @@ answersContainer.innerHTML = '';
     function updatePlayerList(players) {
         lobbyPlayers.innerHTML = '';
         playerCount.textContent = `${players.length}/60`;
-        
+
         players.forEach(p => {
             const el = document.createElement('div');
             el.className = 'player-item';
@@ -2039,7 +2039,7 @@ answersContainer.innerHTML = '';
         teams.forEach(team => {
             const card = teamSelector.querySelector(`.team-card[data-team="${team.id}"]`);
             if (!card) return;
-const count = card.querySelector('.team-count');
+            const count = card.querySelector('.team-count');
             const members = card.querySelector('.team-members');
             const isFull = team.count >= team.capacity;
             const names = team.members.map(member => member.username).join(', ');
@@ -2075,7 +2075,7 @@ const count = card.querySelector('.team-count');
             el.className = `player-item team-score-item ${statusClass}`;
             el.id = `lb-team-${team.team}`;
             el.innerHTML = `
-                <div class="player-avatar">${team.eliminated ? '❌' : (rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : '🛡️')}</div>
+                <div class="player-avatar">${team.eliminated ? '❌' : (rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '🛡️')}</div>
                 <div class="player-name" style="font-size: 0.9rem;">${team.name || 'Đội ' + team.team}</div>
                 <div class="player-team-badge">${team.members ? team.members.length : 0}/5</div>
                 <div class="player-score">${team.score}</div>
@@ -2113,7 +2113,7 @@ const count = card.querySelector('.team-count');
 
     function updateModeUI(isTournament) {
         document.querySelectorAll('.mode-card').forEach(card => {
-card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournament' : 'classic'));
+            card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournament' : 'classic'));
         });
     }
 
@@ -2225,7 +2225,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
         showScreen('results');
         if (tournamentWinnerBanner) tournamentWinnerBanner.classList.add('hidden');
         if (resultsTitle) resultsTitle.textContent = 'Kết Quả Cuộc Thi';
-        
+
         // Populate Podium
         podium.innerHTML = '';
         if (leaderboard.length > 0) {
@@ -2240,7 +2240,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
                 podium.appendChild(createPodiumItem(leaderboard[2], 3, '🥉'));
             }
         }
-        
+
         // My Stats
         resScore.textContent = myStats.score || 0;
         resCorrect.textContent = myStats.correct_answers !== undefined ? myStats.correct_answers : '--';
@@ -2409,7 +2409,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
         progressContainer.innerHTML = '';
 
         const teamsMap = new Map();
-        
+
         for (let i = 1; i <= 10; i++) {
             teamsMap.set(i, {
                 id: i,
@@ -2426,10 +2426,10 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
             if (team) {
                 team.active = true;
                 team.score += p.score || 0;
-                
+
                 const progressEntry = currentAnswersProgress.find(ap => ap.sid === p.sid);
                 const hasAnswered = progressEntry ? progressEntry.answered : false;
-                
+
                 team.members.push({
                     sid: p.sid,
                     name: p.username,
@@ -2440,7 +2440,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
         });
 
         const activeTeams = [...teamsMap.values()].filter(t => t.active);
-        
+
         if (activeTeams.length === 0) {
             progressContainer.innerHTML = '<p class="spectator-notice">Chưa có đội nào tham gia.</p>';
             return;
@@ -2453,7 +2453,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
 
             const card = document.createElement('div');
             card.className = `host-team-progress-card ${allAnswered ? 'all-answered' : ''}`;
-            
+
             let membersHTML = team.members.map(m => `
                 <span class="player-progress-dot ${m.answered ? 'answered' : ''}">
                     ${m.avatar} ${m.name} ${m.answered ? '✅' : '⏳'}
@@ -2485,7 +2485,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
         timerText.textContent = remaining;
 
         if (redirectInterval) clearInterval(redirectInterval);
-        
+
         redirectInterval = setInterval(() => {
             remaining--;
             if (timerText) timerText.textContent = remaining;
@@ -2516,7 +2516,7 @@ card.classList.toggle('selected', card.dataset.mode === (isTournament ? 'tournam
 
         sortedItems.forEach((item, idx) => {
             const rank = idx + 1;
-            
+
             // Format name and members
             let displayName = '';
             let membersList = '';

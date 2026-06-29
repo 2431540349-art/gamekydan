@@ -4964,11 +4964,15 @@ body.cyber-auth .radar-sweep {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 2rem;
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    padding: 0.85rem 1.5rem;
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+    transition: all 0.3s ease;
 }
 
 .r3-instruction-section {
@@ -4977,23 +4981,57 @@ body.cyber-auth .radar-sweep {
 }
 
 .r3-section-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 800;
-    color: var(--accent);
+    color: #fbbf24; /* Amber accent */
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.25rem;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.15rem;
 }
 
 .r3-instruction {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #f8fafc;
+    line-height: 1.4;
 }
 
 .r3-controls {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Modernized R3 submit button */
+#btn-r3-submit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 0.55rem 1.75rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+#btn-r3-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    filter: brightness(1.1);
+}
+
+#btn-r3-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+#btn-r3-submit:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 /* Interaction Specific Elements */
@@ -5696,47 +5734,119 @@ body.cyber-auth .radar-sweep {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 25px;
-    background: var(--card) !important;
-    border: 1px solid var(--card-border) !important;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    padding: 0.85rem 1.5rem;
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    margin-top: 10px;
+    transition: all 0.3s ease;
 }
 
 .r4-instruction-section {
     flex: 1;
-    margin-right: 30px;
+    margin-right: 20px;
 }
 
 .r4-section-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
-    font-weight: 700;
-    margin-bottom: 5px;
+    letter-spacing: 1.5px;
+    color: #10b981; /* Emerald accent */
+    font-weight: 800;
+    margin-bottom: 0.15rem;
 }
 
 .r4-instruction {
-    font-size: 1.05rem;
-    line-height: 1.5;
-    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #f8fafc;
 }
 
 .r4-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0.75rem;
 }
 
+/* Premium R4 score badge */
 .r4-team-score-display {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-weight: 600;
 }
 
 .r4-team-score-display strong {
-    font-size: 1.4rem;
-    color: var(--accent);
+    font-size: 1.1rem;
+    color: #fbbf24;
+    font-weight: 900;
+}
+
+/* Modernized R4 buttons */
+#btn-r4-submit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 0.55rem 1.75rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+#btn-r4-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    filter: brightness(1.1);
+}
+
+#btn-r4-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+#btn-r4-submit:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+#btn-r4-hint {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    font-weight: 700;
+    padding: 0.55rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#btn-r4-hint:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+#btn-r4-hint:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* Interaction Components styling */

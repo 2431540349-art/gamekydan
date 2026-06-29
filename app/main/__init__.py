@@ -62,7 +62,9 @@ STUDENTS = [
     {"mssv": "2431540018", "name": "Trần Phúc Hoàng", "gender": "Nam", "group": "9"},
     {"mssv": "2254810162", "name": "Nguyễn Anh Kha", "gender": "Nam", "group": "9"},
     {"mssv": "2431540112", "name": "Ngô Tùng Anh Tú", "gender": "Nam", "group": "9"},
-    {"mssv": "2431540027", "name": "Phan Hoàng Tý", "gender": "Nam", "group": "9"}
+    {"mssv": "2431540027", "name": "Phan Hoàng Tỷ", "gender": "Nam", "group": "9"},
+    {"mssv": "2431540349", "name": "Nguyễn Kỳ Đàn", "gender": "Nam", "group": "5"}
+
 ]
 STUDENTS_BY_MSSV = {student["mssv"]: student for student in STUDENTS}
 

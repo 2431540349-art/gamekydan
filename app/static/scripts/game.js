@@ -1316,33 +1316,11 @@ const resCorrect = document.getElementById('res-correct');
             const isRound3 = data.round === 3 || (currentRound === 3);
 
             if (isRound3) {
-                // Round 3 detective result
-                const isCorrect = data.is_correct;
-                const score = data.score || 0;
-                const partial = data.partial_score || 0;
-
-                if (isCorrect) {
-                    SoundEffects.playCorrect();
-                    Confetti.burst();
-                } else {
-                    SoundEffects.playWrong();
-                }
-
-                if (r3CurrentHandler) {
-                    r3CurrentHandler.showCorrectAnswer(data.correct_details);
-                }
-
+                // Round 3 detective result - correct/wrong notifications and explanation popups removed
                 btnR3Submit.classList.add('hidden');
                 if (window.GAME_CONFIG.isHost) {
                     btnR3Next.classList.remove('hidden');
                 }
-
-                expTitle.textContent = isCorrect ? `✅ Chính xác! +${score}đ` : (partial > 0 ? `⚡ Bán phần! +${partial}đ` : `❌ Sai rồi!`);
-                expText.textContent = data.explanation || '';
-                expPopup.className = `explanation-popup show ${isCorrect ? 'correct' : 'wrong'}`;
-                setTimeout(() => {
-                    expPopup.classList.remove('show');
-                }, 4000);
                 return;
             }
 
@@ -1616,23 +1594,7 @@ const resCorrect = document.getElementById('res-correct');
         });
 
         socket.on('round4_mission_result', (data) => {
-            const isCorrect = data.is_correct;
             const score = data.score || 0;
-            const explanation = data.explanation || '';
-
-            // Show result feedback
-            if (isCorrect) {
-                SoundEffects.playCorrect();
-                showToast(`✅ Nhiệm vụ ${data.mission_index} hoàn thành! +${score} điểm`, 'success');
-            } else {
-                SoundEffects.playWrong();
-                showToast(`❌ Nhiệm vụ ${data.mission_index} thất bại. ${explanation}`, 'error');
-            }
-
-            // Show correct answer
-            if (r4CurrentHandler && data.correct_details) {
-                r4CurrentHandler.showCorrectAnswer(data.correct_details);
-            }
 
             // Update team score
             const currentScore = parseInt(r4TeamScore?.textContent || '0');

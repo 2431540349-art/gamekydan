@@ -67,7 +67,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'question_count': ROUND1_QUESTIONS_PER_PLAYER,
         'time_per_question': ROUND1_ANSWER_SECONDS,
         'read_seconds': ROUND1_READ_SECONDS,
-        'break_seconds': 30,
+        'break_seconds': 10,
         'description': '10 đội tham gia, chọn 7 đội may mắn đi tiếp và 3 đội bị loại',
     },
     2: {
@@ -77,7 +77,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'question_count': ROUND2_QUESTIONS_PER_TEAM,
         'time_per_question': ROUND2_ANSWER_SECONDS,
         'read_seconds': ROUND2_READ_SECONDS,
-        'break_seconds': 30,
+        'break_seconds': 10,
         'description': '7 đội theo 7 chủ đề, chọn 5 đội đi tiếp',
     },
     3: {
@@ -86,7 +86,7 @@ TOURNAMENT_ROUND_CONFIG = {
         'teams_advance': 2,
         'question_count': 6,
         'time_per_question': 20,
-        'break_seconds': 30,
+        'break_seconds': 10,
         'description': '3 đội phân tích hình ảnh, chỉ ra dấu hiệu tấn công mạng',
     },
     4: {
@@ -2391,6 +2391,17 @@ def end_round4_grand_final(room_code):
             'eliminated_teams': [runner_up_team] if runner_up_team else [],
         }
         room['round_history'].append(round_result)
+
+        # Print results and statistics to server console immediately
+        print(f"\n🏆 [ROUND 4 GRAND FINAL RESULTS] ROOM: {room_code}")
+        print(f"🥇 CHAMPION TEAM: {champion_team}")
+        if runner_up_team:
+            print(f"🥈 RUNNER UP TEAM: {runner_up_team}")
+        print(f"⭐ MVP: {mvp_player['avatar']} {mvp_player['name']} - {mvp_player['score']} pts")
+        print("📊 TEAM STATISTICS:")
+        for team_stat in rankings:
+            print(f"  - Team {team_stat['team']}: Score={team_stat['score']}, Accuracy={team_stat['accuracy']:.1f}%, Avg Time={team_stat['avg_time']:.1f}s, Perfect Missions={team_stat['perfect_missions']}/5")
+        print("="*40 + "\n")
 
         socketio.emit('round4_game_over', {
             'champion_team': champion_team,

@@ -5904,10 +5904,32 @@ body.cyber-auth .radar-sweep {
 }
 
 /* ── Round 4: Podium Extension ── */
+.podium-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+    flex: 1;
+    max-width: 320px;
+    box-shadow: var(--shadow-sm);
+}
+
+.podium-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-5px);
+}
+
 .podium-card.champion {
     border: 2px solid var(--accent);
     background: linear-gradient(135deg, rgba(243, 156, 18, 0.08), var(--card));
     box-shadow: 0 0 30px rgba(243, 156, 18, 0.15);
+    order: 2;
+}
+
+.podium-card:not(.champion) {
+    order: 1;
 }
 
 .podium-stats {
